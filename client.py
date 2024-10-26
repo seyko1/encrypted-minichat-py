@@ -47,9 +47,7 @@ class interface_client (tk.Tk):
     def receive(self):
         while True:
             try:
-                print(1)
                 msg = self.client.recv(1024).decode('ascii')
-                print(2)
                 if msg == 'NICK':
                     self.client.send(self.nickname.encode('ascii'))
                 else:
