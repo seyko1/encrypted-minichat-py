@@ -8,12 +8,18 @@ class ClientNetwork:
         self.port = port
         self.socket: socket.socket = None
         self.receive_thread: threading.Thread = None
+        # fonction de rappel à ajouter depuis la classe parente ClientUi
+        self.display_callback = None
 
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
             self.socket.connect((self.host, self.port))
+
+            # lancer le thread de reception des messages
+            self.receive_thread = threading.Thread(target=self.receive_messages)
+            self.receive_thread.start()
         except Exception:
             self.disconnect()
 
@@ -27,6 +33,27 @@ class ClientNetwork:
                 self.socket.send(message.encode('ascii'))
             except Exception as e:
                 print(f"Erreur lors de l'envoi du message : {e}")
+    
+    def receive_messages(self):
+        while True:
+            try:
+                message = self.socket.recv(1024).decode('ascii')
+
+                if message == 'NICK':
+                    self.send_message(self.nickname)
+                else:
+                    # décomposer le message depuis le format <sender>: <message>
+                    split = message.split(': ', 1)
+                    
+                    sender  = split[0] if len(split) > 1 else "server"
+                    content = split[1] if len(split) > 1 else split[0]
+
+                    # déléguer l'affichage d'un message dans une fonction de rappel
+                    self.display_callback(content, sender)
+            except Exception as e:
+                print(f"Erreur lors de la reception d'un message : {e}")
+                self.disconnect()
+                break
 
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
@@ -36,14 +63,13 @@ class ClientUi(tk.Tk):
 
         self.network_client = network_client
         self.nickname = nickname
+
+        self.network_client.display_callback = self.display_messages
         
         self.init_ui()
 
     def start_network_connection(self):
         self.network_client.connect()
-
-        self.receive_thread = threading.Thread(target=self.receive_messages)
-        self.receive_thread.start()
 
     def init_ui(self):
         self.title(f"{ClientUi.TITLE} - {self.nickname}")
@@ -99,26 +125,10 @@ class ClientUi(tk.Tk):
             full_message = f'{self.nickname}: {message}'
             self.network_client.send_message(full_message)
 
-    def receive_messages(self):
-        while True:
-            try:
-                message = self.network_client.socket.recv(1024).decode('ascii')
-
-                if message == 'NICK':
-                    self.network_client.send_message(self.nickname)
-                else:
-                    msg: dict[str] = self.decompose_message(message)
-                    
-                    self.display_messages(msg['content'], msg['sender'])
-            except Exception as e:
-                print(f"Erreur lors de la reception d'un message : {e}")
-                self.network_client.disconnect()
-                break
-
     def display_messages(self, msg: str, sender: str = 'server'):
         if not msg:
             return
-        
+
         self.chatbox.config(state='normal')
 
         # message du serveur
@@ -134,13 +144,6 @@ class ClientUi(tk.Tk):
         self.chatbox.config(state='disabled') # bloque le texte
         self.chatbox.see(tk.END)
         self.input_space.delete(0, tk.END) # vide l'input
-
-    def decompose_message(self, message: str) -> dict[str]:
-        splitted = message.split(': ')
-        if len(splitted) == 1:
-            return {'sender': 'server', 'content': splitted[0]}
-        else:
-            return {'sender': splitted[0], 'content': splitted[1]}
 
 nickname = input("Entrez votre nom: ")
 
