@@ -7,9 +7,19 @@ class ClientNetwork:
         self.host = host
         self.port = port
         self.socket: socket.socket = None
-        self.receive_thread: threading.Thread = None
+        self.receive_thread: threading.Thread = None  
         # fonction de rappel à ajouter depuis la classe parente ClientUi
-        self.display_callback = None
+        self._display_callback = None
+
+    @property
+    def display_callback(self):
+        return self._display_callback
+
+    @display_callback.setter
+    def display_callback(self, callback):
+        if not callable(callback):
+            raise ValueError("display_callback doit être une fonction.")
+        self._display_callback = callback
 
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,7 +59,8 @@ class ClientNetwork:
                     content = split[1] if len(split) > 1 else split[0]
 
                     # déléguer l'affichage d'un message dans une fonction de rappel
-                    self.display_callback(content, sender)
+                    if self.display_callback:
+                        self.display_callback(content, sender)
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
