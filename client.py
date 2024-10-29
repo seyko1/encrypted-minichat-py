@@ -3,9 +3,10 @@ import threading
 import tkinter as tk
 
 class ClientNetwork:
-    def __init__(self, host = 'localhost', port = 5555):
+    def __init__(self, nickname: str, host = 'localhost', port = 5555):
         self.host = host
         self.port = port
+        self.nickname = nickname
         self.socket: socket.socket = None
         self.receive_thread: threading.Thread = None  
         # fonction de rappel à ajouter depuis la classe parente ClientUi
@@ -69,11 +70,11 @@ class ClientNetwork:
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
 
-    def __init__(self, network_client: ClientNetwork, nickname: str):
+    def __init__(self, network_client: ClientNetwork):
         super().__init__()
 
         self.network_client = network_client
-        self.nickname = nickname
+        self.nickname = network_client.nickname
 
         self.network_client.display_callback = self.display_messages
         
@@ -158,8 +159,8 @@ class ClientUi(tk.Tk):
 
 nickname = input("Entrez votre nom: ")
 
-client_network = ClientNetwork(host = "localhost", port = 5555)
-client_ui = ClientUi(client_network, nickname)
+client_network = ClientNetwork(nickname, host = "localhost", port = 5555)
+client_ui = ClientUi(client_network)
 client_ui.start_network_connection()
 
 client_ui.mainloop()
