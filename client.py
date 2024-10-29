@@ -39,11 +39,13 @@ class ClientNetwork:
             self.socket.close()
 
     def send_message(self, message):
-        if self.socket:
-            try:  
-                self.socket.send(message.encode('ascii'))
-            except Exception as e:
-                print(f"Erreur lors de l'envoi du message : {e}")
+        if not self.socket:
+            return
+
+        try:  
+            self.socket.send(message.encode('ascii'))
+        except Exception as e:
+            print(f"Erreur lors de l'envoi du message : {e}")
     
     def receive_messages(self):
         while True:
