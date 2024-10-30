@@ -55,15 +55,9 @@ class ClientNetwork:
                 if message == 'NICK':
                     self.send_message(self.nickname)
                 else:
-                    # décomposer le message depuis le format <sender>: <message>
-                    split = message.split(': ', 1)
-                    
-                    sender  = split[0] if len(split) > 1 else "server"
-                    content = split[1] if len(split) > 1 else split[0]
-
                     # déléguer l'affichage d'un message dans une fonction de rappel
                     if self.display_callback:
-                        self.display_callback(content, sender)
+                        self.display_callback(message)
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
@@ -104,7 +98,7 @@ class ClientUi(tk.Tk):
         self.text_bar = tk.Frame(self.connect_interf, bg='pink')
         self.txt = tk.StringVar()
         self.input_space: tk.Entry = tk.Entry(self.text_bar, textvariable=self.txt)
-        self.send_button = tk.Button(self.text_bar, text='SEND', command=lambda:self.send(self.txt.get()))
+        self.send_button = tk.Button(self.text_bar, text = 'Send', command = lambda:self.send_message(self.txt.get()))
 
         # paramétrage du scrollbar
         chat_scroll = tk.Scrollbar(self.connect_interf, orient=tk.VERTICAL)
@@ -117,7 +111,7 @@ class ClientUi(tk.Tk):
         self.chatbox.tag_configure('center', justify='center')
         
         # permet d'appuyer sur Entrer pour envoyer le message
-        self.bind("<Return>", lambda e: self.send_message())
+        self.bind("<Return>", lambda _:self.send_message(self.txt.get()))
 
         # placement des widgets
         self.connect_interf.grid()
@@ -132,32 +126,41 @@ class ClientUi(tk.Tk):
 
         self.display_messages("<connecté>")
 
-    def send_message(self):
-        message = self.txt.get()
-
+    def send_message(self, message):
         if (message):
             full_message = f'{self.nickname}: {message}'
             self.network_client.send_message(full_message)
 
-    def display_messages(self, msg: str, sender: str = 'server'):
-        if not msg:
+    def display_messages(self, message: str):
+        if not message:
             return
+
+        sender, content = self.decompose_message(message).values()
 
         self.chatbox.config(state='normal')
 
         # message du serveur
         if sender == 'server':
-            self.chatbox.insert(tk.END, f'\n{msg}\n', 'center')
+            self.chatbox.insert(tk.END, f'\n{content}\n', 'center')
         # message du client actuel
         elif sender == self.nickname:
-            self.chatbox.insert(tk.END, f'\nME:\n{msg}\n', 'right')
+            self.chatbox.insert(tk.END, f'\nME:\n{content}\n', 'right')
         # message d'un autre client
         else:
-            self.chatbox.insert(tk.END, f'\n{sender}:\n{msg}\n', 'left')
+            self.chatbox.insert(tk.END, f'\n{sender}:\n{content}\n', 'left')
 
         self.chatbox.config(state='disabled') # bloque le texte
         self.chatbox.see(tk.END)
         self.input_space.delete(0, tk.END) # vide l'input
+    
+    # décompose un message depuis le format <sender>: <message> ou <message>
+    def decompose_message(self, message: str) -> dict[str, str]:
+        split = message.split(': ', 1)
+ 
+        return {
+            'sender': split[0] if len(split) > 1 else 'server',
+            'content': split[1] if len(split) > 1 else split[0]
+        }
 
 nickname = input("Entrez votre nom: ")
 
