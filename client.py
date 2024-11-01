@@ -66,18 +66,32 @@ class ClientNetwork:
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
 
-    def __init__(self, network_client: ClientNetwork):
+    def __init__(self, nickname: str): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
         super().__init__()
 
-        self.network_client = network_client
-        self.nickname = network_client.nickname
+        self.network_client: ClientNetwork = None
+        self.nickname = nickname #existe temporairement, permet d'obtenir le nom avant le création de l'objet UI
+
+        self.connection_ui()
+
+
+    def start_network_connection(self, nickname: str):
+        self.network_client = ClientNetwork(nickname, host = "localhost", port = 5555)
 
         self.network_client.display_callback = self.display_messages
-        
-        self.init_ui()
-
-    def start_network_connection(self):
         self.network_client.connect()
+
+
+    # Création d'une interface recueillant le nom de l'utilisateur
+    # !! pour l'instant, il n'y a pas d'interface
+    def connection_ui(self):
+        #self.nickname = input("Entrez votre nom: ")
+        # je voulais faire l'input ici, ce qui se ferait avec une interface,
+        # mais en passant par le terminale, c'est mieux de faire l'input avant l'initialisation de l'objet UI
+        # sinon, ça ouvre une interface vide, puis il faut rebasculer dans le terminal pour entrer le nom
+        self.init_ui()
+        self.start_network_connection(self.nickname) #oui c'est bizarre de donner un nom qu'on a déjà, mais plus tard, c'est ici, qu'il sera créé
+
 
     def init_ui(self):
         self.title(f"{ClientUi.TITLE} - {self.nickname}")
@@ -162,10 +176,8 @@ class ClientUi(tk.Tk):
             'content': split[1] if len(split) > 1 else split[0]
         }
 
-nickname = input("Entrez votre nom: ")
+nickname = input("Entrez votre nom: ") #est voué à disparaitre
 
-client_network = ClientNetwork(nickname, host = "localhost", port = 5555)
-client_ui = ClientUi(client_network)
-client_ui.start_network_connection()
+client_ui = ClientUi(nickname) #l'argument ne sera plus donné ici, lorsqu'une interface de connection existera
 
 client_ui.mainloop()
