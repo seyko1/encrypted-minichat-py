@@ -1,53 +1,171 @@
 import socket
 import threading
+import tkinter as tk
 
-class client_socket ():
-    def __init__(self, host: str = "", port: int = 5555):
-        self.host = host # localhost by default
-        self.port = port # 5555 by default
+class ClientNetwork:
+    def __init__(self, nickname: str, host = 'localhost', port = 5555):
+        self.host = host
+        self.port = port
+        self.nickname = nickname
+        self.socket: socket.socket = None
+        self.receive_thread: threading.Thread = None  
+        # fonction de rappel à ajouter depuis la classe parente ClientUi
+        self._display_callback = None
 
-        self.client: socket.socket = None
+    @property
+    def display_callback(self):
+        return self._display_callback
 
-        self.receive_thread: threading.Thread = None
-        self.write_thread: threading.Thread = None
+    @display_callback.setter
+    def display_callback(self, callback):
+        if not callable(callback):
+            raise ValueError("display_callback doit être une fonction.")
+        self._display_callback = callback
 
-        self.nickname: str = None
+    def connect(self):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        try:
+            self.socket.connect((self.host, self.port))
 
-    def start(self):
-        self.nickname = input("Choose a nickname: ")
+            # lancer le thread de reception des messages
+            self.receive_thread = threading.Thread(target=self.receive_messages)
+            self.receive_thread.start()
+        except Exception:
+            self.disconnect()
 
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((self.host, self.port))
+    def disconnect(self):
+        if self.socket:
+            self.socket.close()
 
-        self.receive_thread = threading.Thread(target=self.receive)
-        self.receive_thread.start()
+    def send_message(self, message):
+        if not self.socket:
+            return
 
-        self.write_thread = threading.Thread(target=self.write)
-        self.write_thread.start()
-
-
-    def receive(self):
+        try:  
+            self.socket.send(message.encode('ascii'))
+        except Exception as e:
+            print(f"Erreur lors de l'envoi du message : {e}")
+    
+    def receive_messages(self):
         while True:
             try:
-                msg = self.client.recv(1024).decode('ascii')
-                if msg == 'NICK':
-                    self.client.send(self.nickname.encode('ascii'))
-                else:
-                    print(msg)
-            except:
-                print("An error occurred")
-                self.client.close()
-                break
-            
-    def write(self):
-        limit = 10
-        while limit > 0:
-            print("-> ")
-            msg = f'{self.nickname}: {input("")}'
-            self.client.send(msg.encode('ascii'))
-            limit -= 1
-        self.client.close()
+                message = self.socket.recv(1024).decode('ascii')
 
-c = client_socket()
-c.start()
+                if message == 'NICK':
+                    self.send_message(self.nickname)
+                else:
+                    # déléguer l'affichage d'un message dans une fonction de rappel
+                    if self.display_callback:
+                        self.display_callback(message)
+            except Exception as e:
+                print(f"Erreur lors de la reception d'un message : {e}")
+                self.disconnect()
+                break
+
+class ClientUi(tk.Tk):
+    TITLE = "P8 Mini Chat"
+
+    def __init__(self, network_client: ClientNetwork):
+        super().__init__()
+
+        self.network_client = network_client
+        self.nickname = network_client.nickname
+
+        self.network_client.display_callback = self.display_messages
+        
+        self.init_ui()
+
+    def start_network_connection(self):
+        self.network_client.connect()
+
+    def init_ui(self):
+        self.title(f"{ClientUi.TITLE} - {self.nickname}")
+        self.geometry('400x500')
+        self.configure(bg='white')
+        
+        # Configurer les widgets ici...
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        # fenêtre
+        self.connect_interf = tk.Frame(self, bg='white')
+
+        # espaces de messages
+        self.chatbox = tk.Text(self.connect_interf, bg='#EEEEEE', width=40, height=20, state='disabled')
+        
+        # espaces pour l'input de l'utilisateur
+        self.text_bar = tk.Frame(self.connect_interf, bg='pink')
+        self.txt = tk.StringVar()
+        self.input_space: tk.Entry = tk.Entry(self.text_bar, textvariable=self.txt)
+        self.send_button = tk.Button(self.text_bar, text = 'Send', command = lambda:self.send_message(self.txt.get()))
+
+        # paramétrage du scrollbar
+        chat_scroll = tk.Scrollbar(self.connect_interf, orient=tk.VERTICAL)
+        chat_scroll.config(command=self.chatbox.yview)
+        self.chatbox.config(yscrollcommand=chat_scroll.set)
+        
+        # préparation de tags pour placer les messages
+        self.chatbox.tag_configure('right', justify='right')
+        self.chatbox.tag_configure('left', justify='left')
+        self.chatbox.tag_configure('center', justify='center')
+        
+        # permet d'appuyer sur Entrer pour envoyer le message
+        self.bind("<Return>", lambda _:self.send_message(self.txt.get()))
+
+        # placement des widgets
+        self.connect_interf.grid()
+        
+        # espace des messages
+        self.text_bar.grid(row=2, column=0, columnspan=4)
+        
+        # espace de l'input
+        self.chatbox.grid(row=1, column=0, columnspan=4)
+        self.input_space.grid(row=0, column=1)
+        self.send_button.grid(row=0, column=2)
+
+        self.display_messages("<connecté>")
+
+    def send_message(self, message):
+        if (message):
+            full_message = f'{self.nickname}: {message}'
+            self.network_client.send_message(full_message)
+
+    def display_messages(self, message: str):
+        if not message:
+            return
+
+        sender, content = self.decompose_message(message).values()
+
+        self.chatbox.config(state='normal')
+
+        # message du serveur
+        if sender == 'server':
+            self.chatbox.insert(tk.END, f'\n{content}\n', 'center')
+        # message du client actuel
+        elif sender == self.nickname:
+            self.chatbox.insert(tk.END, f'\nME:\n{content}\n', 'right')
+        # message d'un autre client
+        else:
+            self.chatbox.insert(tk.END, f'\n{sender}:\n{content}\n', 'left')
+
+        self.chatbox.config(state='disabled') # bloque le texte
+        self.chatbox.see(tk.END)
+        self.input_space.delete(0, tk.END) # vide l'input
+    
+    # décompose un message depuis le format <sender>: <message> ou <message>
+    def decompose_message(self, message: str) -> dict[str, str]:
+        split = message.split(': ', 1)
+ 
+        return {
+            'sender': split[0] if len(split) > 1 else 'server',
+            'content': split[1] if len(split) > 1 else split[0]
+        }
+
+nickname = input("Entrez votre nom: ")
+
+client_network = ClientNetwork(nickname, host = "localhost", port = 5555)
+client_ui = ClientUi(client_network)
+client_ui.start_network_connection()
+
+client_ui.mainloop()
