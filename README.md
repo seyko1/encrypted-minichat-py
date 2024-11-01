@@ -1,16 +1,13 @@
-# RSCHAT
+# Messagerie instantannée sécurisée
 
-Un simple chat sécurisé avec le système de RSA.
+Implémentation d'un mini-chat minimaliste qui permet à un ensemble de personnes d'échanger des messages de manière sécurisée.
 
 ## Logiciels
 Ce projet à été crée avec : <br>
 - Python 3.10 <br>
 - TKinter <br>
-- Pads <br>
 
-## Setup
-
-### Instalation
+## Installation
 
 Clonez le dépôt sur votre machine :
 
@@ -18,7 +15,7 @@ Clonez le dépôt sur votre machine :
 git clone git@code.up8.edu:fgodin/p8-mini-chat.git
 ```
 
-### Utilisation
+## Utilisation
 
 Pour démarrer le serveur, ouvrez un terminal et exécutez :
 
@@ -47,12 +44,12 @@ python3 client.py
 
 ## Contributeurs
 
-[@fgodin](https://code.up8.edu/fgodin)<br>
-[@dhullot](https://code.up8.edu/dhullot)<br>
-[@mhimeur](https://code.up8.edu/mhimeur)<br>
-[@Valentin_G](https://code.up8.edu/Valentin_G)<br>
-[@nsougoumar](https://code.up8.edu/nsougoumar)<br>
-[@aekomono](https://code.up8.edu/aekomono)<br>
+[Anyce Ekomono](https://code.up8.edu/aekomono)  
+[Dounia Hullot](https://code.up8.edu/dhullot)  
+[François Godin](https://code.up8.edu/fgodin)  
+[Maeva Himmer](https://code.up8.edu/mhimeur)  
+[Neha Sougoumar](https://code.up8.edu/nsougoumar)  
+[Valentin Guillot](https://code.up8.edu/Valentin_G)
 
 ## Ressources
 
