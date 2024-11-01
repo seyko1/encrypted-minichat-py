@@ -33,13 +33,17 @@ Pour démarrer le client, ouvrez un ou plusieurs terminaux et exécutez :
 python3 client.py
 ```
 
-### Exemple
+## Exemples
 
-![Exemple_de_lancement_du_chat](serveur.png "Exemple de lancement du serveur du chat").
+<img src="documentation/images/server-example.png" alt="" width="384" />
 
-![Exemple_de_lancement_du_chat](client1.png "Exemple de lancement client1").
+*Lancement du serveur depuis un terminal*
 
-![Exemple_de_lancement_du_chat](client2.png "Exemple de lancement client2").
+---
+
+<img src="documentation/images/clients-example.png" alt="" width="576" />
+
+*Aperçu de deux interfaces de discussion simultanée entre deux utilisateurs Alice et Bob.*
 
 ## Contributeurs
 
