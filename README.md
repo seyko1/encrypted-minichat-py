@@ -56,4 +56,19 @@ python3 client.py
 
 ## Ressources
 
-Lien pads : [Consignes du projet](https://pads.up8.edu/rj6S3VS3R5W_QRial1zb7g#)
+### Liens pads
+
+[Détail des consignes du projet](https://pads.up8.edu/rj6S3VS3R5W_QRial1zb7g#)
+
+### Schémas
+ 
+<img src="documentation/images/encryption-between-two-clients.png" alt="" width="576" />
+
+*Chiffrement entre deux clients*  
+
+**DH** : Diffie Helmann  
+**KsDH** : Clé secrète DH  
+**Kss** : Clé secrète signature  
+**Ksp** : Clé publique signature  
+**A1 / B1** : Transport publique pour DH  
+**H(...)** : Fonction de hachage pour RSA  
