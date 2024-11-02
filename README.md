@@ -49,7 +49,7 @@ python3 client.py
 [François Godin](https://code.up8.edu/fgodin)  
 [Maeva Himmer](https://code.up8.edu/mhimeur)  
 [Neha Sougoumar](https://code.up8.edu/nsougoumar)  
-[Valentin Guillot](https://code.up8.edu/Valentin_G)
+[Valentin Guillon](https://code.up8.edu/Valentin_G)
 
 ## Ressources
 
