@@ -47,7 +47,7 @@ python3 client.py
 [Anyce Ekomono](https://code.up8.edu/aekomono)  
 [Dounia Hullot](https://code.up8.edu/dhullot)  
 [François Godin](https://code.up8.edu/fgodin)  
-[Maeva Himmer](https://code.up8.edu/mhimeur)  
+[Maëva Himeur](https://code.up8.edu/mhimeur)  
 [Neha Sougoumar](https://code.up8.edu/nsougoumar)  
 [Valentin Guillon](https://code.up8.edu/Valentin_G)
 
