@@ -27,6 +27,7 @@ class ClientNetwork:
 
         try:
             self.socket.connect((self.host, self.port))
+            self.send_message(self.nickname)
 
             # lancer le thread de reception des messages
             self.receive_thread = threading.Thread(target=self.receive_messages)
@@ -52,12 +53,9 @@ class ClientNetwork:
             try:
                 message = self.socket.recv(1024).decode('ascii')
 
-                if message == 'NICK':
-                    self.send_message(self.nickname)
-                else:
-                    # déléguer l'affichage d'un message dans une fonction de rappel
-                    if self.display_callback:
-                        self.display_callback(message)
+                # déléguer l'affichage d'un message dans une fonction de rappel
+                if self.display_callback:
+                    self.display_callback(message)
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
