@@ -36,7 +36,6 @@ class server_socket ():
             client, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            client.send('NICK'.encode('ascii'))
             nickname = client.recv(1024).decode('ascii')
             self.nicknames.append(nickname)
             self.clients.append(client)
