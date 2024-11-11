@@ -63,11 +63,11 @@ class ClientNetwork:
 
 
     def encode_full_message(self, msg: str) -> bytes:
-        return msg.encode('ascii')
+        return msg.encode('utf-8')
     
 
     def decode_full_message(self, msg: bytes) -> str:
-        return msg.decode('ascii')
+        return msg.decode('utf-8')
 
 
 class ClientUi(tk.Tk):
