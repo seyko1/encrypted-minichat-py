@@ -44,14 +44,14 @@ class ClientNetwork:
             return
 
         try:  
-            self.socket.send(message.encode('ascii'))
+            self.socket.send(self.encode_full_message(message))
         except Exception as e:
             print(f"Erreur lors de l'envoi du message : {e}")
     
     def receive_messages(self):
         while True:
             try:
-                message = self.socket.recv(1024).decode('ascii')
+                message = self.decode_full_message(self.socket.recv(1024))
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
@@ -60,6 +60,15 @@ class ClientNetwork:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
                 break
+
+
+    def encode_full_message(self, msg: str) -> bytes:
+        return msg.encode('ascii')
+    
+
+    def decode_full_message(self, msg: bytes) -> str:
+        return msg.decode('ascii')
+
 
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"

@@ -20,14 +20,14 @@ class server_socket ():
     def handle(self, client):
         while True:
             try:
-                msg = client.recv(1024).decode('ascii')
-                self.broadcast(msg.encode('ascii'))
+                msg = self.decode_full_message(client.recv(1024))
+                self.broadcast(self.encode_full_message(msg))
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(f"{nickname} has left the chat\n".encode('ascii'))
+                self.broadcast(self.encode_full_message(f"{nickname} has left the chat\n"))
                 self.nicknames.remove(nickname)
                 break
 
@@ -36,12 +36,12 @@ class server_socket ():
             client, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            nickname = client.recv(1024).decode('ascii')
+            nickname = self.decode_full_message(client.recv(1024))
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(f"{nickname} just joined the chat.\n".encode('ascii'))
-            client.send(("Connected to the server, port " + str(self.port)).encode('ascii'))
+            self.broadcast(self.encode_full_message(f"{nickname} just joined the chat.\n"))
+            client.send((self.encode_full_message("Connected to the server, port " + str(self.port))))
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()
@@ -53,6 +53,15 @@ class server_socket ():
 
         print("The server is ready.")
         self.receive()
+
+
+    def encode_full_message(self, msg: str) -> bytes:
+        return msg.encode('ascii')
+    
+
+    def decode_full_message(self, msg: bytes) -> str:
+        return msg.decode('ascii')
+
 
 server = server_socket()
 server.start()
