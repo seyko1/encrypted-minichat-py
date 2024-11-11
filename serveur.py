@@ -12,9 +12,11 @@ class server_socket ():
         self.nicknames = []
 
     # Envoie un message à tous les clients connectés
-    def broadcast(self, msg):
+    def broadcast(self, msg, ignore: socket.socket = None):
         encoded_msg = self.encode_full_message(msg)
         for client in self.clients:
+            if ignore is client:
+                continue
             client.send(encoded_msg)
 
     # Recevoir les messages de clients connectés
@@ -41,7 +43,7 @@ class server_socket ():
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(f"{nickname} just joined the chat.\n")
+            self.broadcast(f"{nickname} just joined the chat.\n", client)
             client.send((self.encode_full_message("Connected to the server, port " + str(self.port))))
 
             thread = threading.Thread(target=self.handle, args=(client,))
