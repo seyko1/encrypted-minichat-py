@@ -1,6 +1,7 @@
 import socket
 import threading
 import tkinter as tk
+import json
 
 class ClientNetwork:
     def __init__(self, nickname: str, host = 'localhost', port = 5555):
@@ -44,7 +45,7 @@ class ClientNetwork:
             return
 
         try:  
-            self.socket.send(self.encode_full_message(message))
+            self.socket.send(self.encode_full_message(self.formate_message(message)))
         except Exception as e:
             print(f"Erreur lors de l'envoi du message : {e}")
     
@@ -52,22 +53,29 @@ class ClientNetwork:
         while True:
             try:
                 message = self.decode_full_message(self.socket.recv(1024))
+                content = message["content"]
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
-                    self.display_callback(message)
+                    self.display_callback(content)
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
                 break
 
 
-    def encode_full_message(self, msg: str) -> bytes:
-        return msg.encode('utf-8')
+    def formate_message(self, msg) -> dict:
+        return {"content": msg}
+
+
+    def encode_full_message(self, msg: dict) -> bytes:
+        dictToStr = json.dumps(msg)
+        return dictToStr.encode('utf-8')
     
 
-    def decode_full_message(self, msg: bytes) -> str:
-        return msg.decode('utf-8')
+    def decode_full_message(self, msg: bytes) -> dict:
+        bytesToStr = msg.decode('utf-8')
+        return json.loads(bytesToStr)
 
 
 class ClientUi(tk.Tk):

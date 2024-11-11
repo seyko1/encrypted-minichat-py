@@ -1,5 +1,6 @@
 import socket
 import threading
+import json
 
 class server_socket ():
     def __init__(self, host: str = "", port: int = 5555):
@@ -24,13 +25,14 @@ class server_socket ():
         while True:
             try:
                 msg = self.decode_full_message(client.recv(1024))
-                self.broadcast(msg)
+                content = msg["content"]
+                self.broadcast(self.formate_message(content))
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(f"{nickname} has left the chat\n")
+                self.broadcast(self.formate_message(f"{nickname} has left the chat\n"))
                 self.nicknames.remove(nickname)
                 break
 
@@ -39,12 +41,13 @@ class server_socket ():
             client, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            nickname = self.decode_full_message(client.recv(1024))
+            msg = self.decode_full_message(client.recv(1024))
+            nickname = msg["content"]
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(f"{nickname} just joined the chat.\n", client)
-            client.send((self.encode_full_message("Connected to the server, port " + str(self.port))))
+            self.broadcast(self.formate_message(f"{nickname} just joined the chat.\n"), client)
+            client.send((self.encode_full_message(self.formate_message("Connected to the server, port " + str(self.port)))))
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()
@@ -58,12 +61,18 @@ class server_socket ():
         self.receive()
 
 
-    def encode_full_message(self, msg: str) -> bytes:
-        return msg.encode('utf-8')
+    def formate_message(self, msg) -> dict:
+        return {"content": msg}
+
+
+    def encode_full_message(self, msg: dict) -> bytes:
+        dictToStr = json.dumps(msg)
+        return dictToStr.encode('utf-8')
     
 
-    def decode_full_message(self, msg: bytes) -> str:
-        return msg.decode('utf-8')
+    def decode_full_message(self, msg: bytes) -> dict:
+        bytesToStr = msg.decode('utf-8')
+        return json.loads(bytesToStr)
 
 
 server = server_socket()
