@@ -13,21 +13,22 @@ class server_socket ():
 
     # Envoie un message à tous les clients connectés
     def broadcast(self, msg):
+        encoded_msg = self.encode_full_message(msg)
         for client in self.clients:
-            client.send(msg)
+            client.send(encoded_msg)
 
     # Recevoir les messages de clients connectés
     def handle(self, client):
         while True:
             try:
                 msg = self.decode_full_message(client.recv(1024))
-                self.broadcast(self.encode_full_message(msg))
+                self.broadcast(msg)
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(self.encode_full_message(f"{nickname} has left the chat\n"))
+                self.broadcast(f"{nickname} has left the chat\n")
                 self.nicknames.remove(nickname)
                 break
 
@@ -40,7 +41,7 @@ class server_socket ():
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(self.encode_full_message(f"{nickname} just joined the chat.\n"))
+            self.broadcast(f"{nickname} just joined the chat.\n")
             client.send((self.encode_full_message("Connected to the server, port " + str(self.port))))
 
             thread = threading.Thread(target=self.handle, args=(client,))
