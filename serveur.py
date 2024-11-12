@@ -9,13 +9,15 @@ class server_socket ():
 
         self.server: socket.socket = None
 
+        self.groups: dict[str | socket.socket] = {"default": []}
         self.clients = []
         self.nicknames = []
 
-    # Envoie un message à tous les clients connectés
-    def broadcast(self, msg, ignore: socket.socket = None):
+    # Envoie un message à tous les clients du groupe ciblé
+    def broadcast(self, msg, target: str = "default", ignore: socket.socket = None):
         encoded_msg = self.encode_full_message(msg)
-        for client in self.clients:
+
+        for client in self.groups[target]:
             if ignore is client:
                 continue
             #send the size of the message
@@ -33,13 +35,15 @@ class server_socket ():
                 #get the message
                 msg = self.decode_full_message(client.recv(message_lenght))
                 content = msg["content"]
-                self.broadcast(self.formate_message(content))
+                sender = msg["sender"]
+                target = msg["target"]
+                self.broadcast(self.formate_message(content, sender), target)
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(self.formate_message(f"{nickname} has left the chat\n"))
+                self.broadcast(self.formate_message(f"information:::{nickname} has left group"))
                 self.nicknames.remove(nickname)
                 break
 
@@ -56,8 +60,34 @@ class server_socket ():
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(self.formate_message(f"{nickname} just joined the chat.\n"), client)
-            full_message = self.encode_full_message(self.formate_message("Connected to the server, port " + str(self.port)))
+            self.broadcast(self.formate_message(f"information:::{nickname} joined the chat"), ignore=client)
+            full_message = self.encode_full_message(self.formate_message("information:::Connected to the server, port " + str(self.port)))
+            #send the size of the message
+            message_lenght = len(full_message)
+            client.send(message_lenght.to_bytes(4, byteorder='big'))
+            #send the message
+            client.send(full_message)
+
+            # SEND EXISTING GROUPS
+            full_message = self.encode_full_message(self.formate_message(f"list of group:::{list(self.groups.keys())}"))
+            #send the size of the message
+            message_lenght = len(full_message)
+            client.send(message_lenght.to_bytes(4, byteorder='big'))
+            #send the message
+            client.send(full_message)
+
+            # GIVE ACCESS TO A GROUP DEFAULT
+            full_message = self.encode_full_message(self.formate_message("can access group:::default"))
+            #send the size of the message
+            message_lenght = len(full_message)
+            client.send(message_lenght.to_bytes(4, byteorder='big'))
+            #send the message
+            client.send(full_message)
+
+            self.groups["default"].append(client)
+
+            # ALLOW TO JOIN GROUP
+            full_message = self.encode_full_message(self.formate_message("join group:::default"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -76,8 +106,12 @@ class server_socket ():
         self.receive()
 
 
-    def formate_message(self, msg) -> dict:
-        return {"content": msg}
+    def formate_message(self, msg, sender = "server") -> dict:
+        full_message = {
+            "content": msg,
+            "sender" : sender,
+        }
+        return full_message
 
 
     def encode_full_message(self, msg: dict) -> bytes:

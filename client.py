@@ -2,6 +2,7 @@ import socket
 import threading
 import tkinter as tk
 import json
+import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 
 class ClientNetwork:
     def __init__(self, nickname: str, host = 'localhost', port = 5555):
@@ -9,6 +10,8 @@ class ClientNetwork:
         self.port = port
         self.nickname = nickname
         self.socket: socket.socket = None
+        self.groups: dict = {}
+        self.actual_group: str = None
         self.receive_thread: threading.Thread = None  
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
@@ -40,12 +43,12 @@ class ClientNetwork:
         if self.socket:
             self.socket.close()
 
-    def send_message(self, message):
+    def send_message(self, message, target = "server"):
         if not self.socket:
             return
 
         try:  
-            full_message = self.encode_full_message(self.formate_message(message))
+            full_message = self.encode_full_message(self.formate_message(message, target))
             #send the size of the message
             message_lenght = len(full_message)
             self.socket.send(message_lenght.to_bytes(4, byteorder="big"))
@@ -62,18 +65,51 @@ class ClientNetwork:
                 #get the message
                 message = self.decode_full_message(self.socket.recv(message_lenght))
                 content = message["content"]
+                sender = message["sender"]
+                if sender == "server":
+                    self.handle_message_from_server(content)
+                    continue
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
-                    self.display_callback(content)
+                    self.display_callback(content, sender)
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
                 break
 
 
-    def formate_message(self, msg) -> dict:
-        return {"content": msg}
+    def handle_message_from_server(self, message: str):
+        msg = message.split(':::')
+        action = msg[0]
+        content = msg[1]
+
+        match action:
+            case "information":
+                self.display_callback(content)
+            case "can access group":
+                self.groups[content]["have access"] = True
+            case "join group":
+                if not self.groups[content]["have access"]:
+                    print(f"You don't have acces to group [{content}]")
+                else:
+                    self.actual_group = content
+                    print(f"Join group [{content}]")
+            case "list of group":
+                groups = ast.literal_eval(content)
+                for group in groups:
+                    self.groups[group] = {"have access": False}
+            case _:
+                print(f"Server tried this action: [{action}] with this content: [{content}], but as no effect, because is undefined.")
+
+
+    def formate_message(self, msg, target = "server") -> dict:
+        full_message = {
+            "content": msg,
+            "sender" : self.nickname,
+            "target" : target,
+        }
+        return full_message
 
 
     def encode_full_message(self, msg: dict) -> bytes:
@@ -165,39 +201,28 @@ class ClientUi(tk.Tk):
 
     def send_message(self, message):
         if (message):
-            full_message = f'{self.nickname}: {message}'
-            self.network_client.send_message(full_message)
+            self.network_client.send_message(message, self.network_client.actual_group)
 
-    def display_messages(self, message: str):
+    def display_messages(self, message: str, sender = "server"):
         if not message:
             return
-
-        sender, content = self.decompose_message(message).values()
 
         self.chatbox.config(state='normal')
 
         # message du serveur
         if sender == 'server':
-            self.chatbox.insert(tk.END, f'\n{content}\n', 'center')
+            self.chatbox.insert(tk.END, f'\n{message}\n', 'center')
         # message du client actuel
         elif sender == self.nickname:
-            self.chatbox.insert(tk.END, f'\nME:\n{content}\n', 'right')
+            self.chatbox.insert(tk.END, f'\nME:\n{message}\n', 'right')
         # message d'un autre client
         else:
-            self.chatbox.insert(tk.END, f'\n{sender}:\n{content}\n', 'left')
+            self.chatbox.insert(tk.END, f'\n{sender}:\n{message}\n', 'left')
 
         self.chatbox.config(state='disabled') # bloque le texte
         self.chatbox.see(tk.END)
         self.input_space.delete(0, tk.END) # vide l'input
-    
-    # décompose un message depuis le format <sender>: <message> ou <message>
-    def decompose_message(self, message: str) -> dict[str, str]:
-        split = message.split(': ', 1)
- 
-        return {
-            'sender': split[0] if len(split) > 1 else 'server',
-            'content': split[1] if len(split) > 1 else split[0]
-        }
+
 
 nickname = input("Entrez votre nom: ") #est voué à disparaitre
 
