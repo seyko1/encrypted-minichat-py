@@ -18,13 +18,20 @@ class server_socket ():
         for client in self.clients:
             if ignore is client:
                 continue
+            #send the size of the message
+            message_lenght = len(encoded_msg)
+            client.send(message_lenght.to_bytes(4, byteorder='big'))
+            #send the message
             client.send(encoded_msg)
 
     # Recevoir les messages de clients connectés
     def handle(self, client):
         while True:
             try:
-                msg = self.decode_full_message(client.recv(1024))
+                #get the size of the message
+                message_lenght = int.from_bytes(client.recv(4), byteorder='big')
+                #get the message
+                msg = self.decode_full_message(client.recv(message_lenght))
                 content = msg["content"]
                 self.broadcast(self.formate_message(content))
             except:
@@ -41,13 +48,21 @@ class server_socket ():
             client, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            msg = self.decode_full_message(client.recv(1024))
+            #get the size of the message
+            message_lenght = int.from_bytes(client.recv(4))
+            #get the message
+            msg = self.decode_full_message(client.recv(message_lenght))
             nickname = msg["content"]
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
             self.broadcast(self.formate_message(f"{nickname} just joined the chat.\n"), client)
-            client.send((self.encode_full_message(self.formate_message("Connected to the server, port " + str(self.port)))))
+            full_message = self.encode_full_message(self.formate_message("Connected to the server, port " + str(self.port)))
+            #send the size of the message
+            message_lenght = len(full_message)
+            client.send(message_lenght.to_bytes(4, byteorder='big'))
+            #send the message
+            client.send(full_message)
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()

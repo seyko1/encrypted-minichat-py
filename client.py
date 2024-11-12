@@ -45,14 +45,22 @@ class ClientNetwork:
             return
 
         try:  
-            self.socket.send(self.encode_full_message(self.formate_message(message)))
+            full_message = self.encode_full_message(self.formate_message(message))
+            #send the size of the message
+            message_lenght = len(full_message)
+            self.socket.send(message_lenght.to_bytes(4, byteorder="big"))
+            #send the message
+            self.socket.send(full_message)
         except Exception as e:
             print(f"Erreur lors de l'envoi du message : {e}")
     
     def receive_messages(self):
         while True:
             try:
-                message = self.decode_full_message(self.socket.recv(1024))
+                #get the size of the message
+                message_lenght = int.from_bytes(self.socket.recv(4), byteorder='big')
+                #get the message
+                message = self.decode_full_message(self.socket.recv(message_lenght))
                 content = message["content"]
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
