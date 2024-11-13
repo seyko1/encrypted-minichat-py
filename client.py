@@ -66,6 +66,7 @@ class ClientNetwork:
                 message = self.decode_full_message(self.socket.recv(message_lenght))
                 content = message["content"]
                 sender = message["sender"]
+                target = message["target"]
                 if sender == "server":
                     self.handle_message_from_server(content)
                     continue

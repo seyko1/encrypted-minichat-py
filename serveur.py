@@ -37,7 +37,7 @@ class server_socket ():
                 content = msg["content"]
                 sender = msg["sender"]
                 target = msg["target"]
-                self.broadcast(self.formate_message(content, sender), target)
+                self.broadcast(self.formate_message(content, sender, target), target)
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
@@ -106,10 +106,11 @@ class server_socket ():
         self.receive()
 
 
-    def formate_message(self, msg, sender = "server") -> dict:
+    def formate_message(self, msg, sender = "server", target = "") -> dict:
         full_message = {
             "content": msg,
             "sender" : sender,
+            "target" : target,
         }
         return full_message
 
