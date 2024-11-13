@@ -1,15 +1,7 @@
 import socket
 import threading
-import json
-
-class ServerAction:
-    info = "information"
-    allowAccess = "give permission to access the given group" #this will allow to create private group later
-    joinGroup = "join the given group"
-    shareGroups = "give a list of existing groups"
-# To perform an action, the server must send a message as the sender,
-# which the "content" must followed the format:
-# => "action:::content of the action"
+from common_lib import ServerAction
+import common_lib
 
 
 class server_socket ():
@@ -25,7 +17,7 @@ class server_socket ():
 
     # Envoie un message à tous les clients du groupe ciblé
     def broadcast(self, msg, target: str = "default", ignore: socket.socket = None):
-        encoded_msg = self.encode_full_message(msg)
+        encoded_msg = common_lib.encode_full_message(msg)
 
         for client in self.groups[target]:
             if ignore is client:
@@ -43,7 +35,7 @@ class server_socket ():
                 #get the size of the message
                 message_lenght = int.from_bytes(client.recv(4), byteorder='big')
                 #get the message
-                msg = self.decode_full_message(client.recv(message_lenght))
+                msg = common_lib.decode_full_message(client.recv(message_lenght))
                 content = msg["content"]
                 sender = msg["sender"]
                 target = msg["target"]
@@ -65,13 +57,13 @@ class server_socket ():
             #get the size of the message
             message_lenght = int.from_bytes(client.recv(4))
             #get the message
-            msg = self.decode_full_message(client.recv(message_lenght))
+            msg = common_lib.decode_full_message(client.recv(message_lenght))
             nickname = msg["content"]
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
             self.broadcast(self.formate_message(f"{ServerAction.info}:::{nickname} joined the chat"), ignore=client)
-            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.info}:::Connected to the server, port " + str(self.port)))
+            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.info}:::Connected to the server, port " + str(self.port)))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -79,7 +71,7 @@ class server_socket ():
             client.send(full_message)
 
             # SEND EXISTING GROUPS
-            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.shareGroups}:::{list(self.groups.keys())}"))
+            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.shareGroups}:::{list(self.groups.keys())}"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -87,7 +79,7 @@ class server_socket ():
             client.send(full_message)
 
             # GIVE ACCESS TO A GROUP DEFAULT
-            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.allowAccess}:::default"))
+            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.allowAccess}:::default"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -97,7 +89,7 @@ class server_socket ():
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
-            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.joinGroup}:::default"))
+            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.joinGroup}:::default"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -123,16 +115,6 @@ class server_socket ():
             "target" : target,
         }
         return full_message
-
-
-    def encode_full_message(self, msg: dict) -> bytes:
-        dictToStr = json.dumps(msg)
-        return dictToStr.encode('utf-8')
-    
-
-    def decode_full_message(self, msg: bytes) -> dict:
-        bytesToStr = msg.decode('utf-8')
-        return json.loads(bytesToStr)
 
 
 server = server_socket()

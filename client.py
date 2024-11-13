@@ -1,7 +1,8 @@
 import socket
 import threading
 import tkinter as tk
-import json
+from common_lib import ServerAction
+import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 
 class ServerAction:
@@ -58,7 +59,7 @@ class ClientNetwork:
             return
 
         try:  
-            full_message = self.encode_full_message(self.formate_message(message, target))
+            full_message = common_lib.encode_full_message(self.formate_message(message, target))
             #send the size of the message
             message_lenght = len(full_message)
             self.socket.send(message_lenght.to_bytes(4, byteorder="big"))
@@ -73,7 +74,7 @@ class ClientNetwork:
                 #get the size of the message
                 message_lenght = int.from_bytes(self.socket.recv(4), byteorder='big')
                 #get the message
-                message = self.decode_full_message(self.socket.recv(message_lenght))
+                message = common_lib.decode_full_message(self.socket.recv(message_lenght))
                 content = message["content"]
                 sender = message["sender"]
                 target = message["target"]
@@ -121,16 +122,6 @@ class ClientNetwork:
             "target" : target,
         }
         return full_message
-
-
-    def encode_full_message(self, msg: dict) -> bytes:
-        dictToStr = json.dumps(msg)
-        return dictToStr.encode('utf-8')
-    
-
-    def decode_full_message(self, msg: bytes) -> dict:
-        bytesToStr = msg.decode('utf-8')
-        return json.loads(bytesToStr)
 
 
 class ClientUi(tk.Tk):
