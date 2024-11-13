@@ -2,6 +2,16 @@ import socket
 import threading
 import json
 
+class ServerAction:
+    info = "information"
+    allowAccess = "give permission to access the given group" #this will allow to create private group later
+    joinGroup = "join the given group"
+    shareGroups = "give a list of existing groups"
+# To perform an action, the server must send a message as the sender,
+# which the "content" must followed the format:
+# => "action:::content of the action"
+
+
 class server_socket ():
     def __init__(self, host: str = "", port: int = 5555):
         self.host = host # localhost by default
@@ -43,7 +53,7 @@ class server_socket ():
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(self.formate_message(f"information:::{nickname} has left group"))
+                self.broadcast(self.formate_message(f"{ServerAction.info}:::{nickname} has left group"))
                 self.nicknames.remove(nickname)
                 break
 
@@ -60,8 +70,8 @@ class server_socket ():
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(self.formate_message(f"information:::{nickname} joined the chat"), ignore=client)
-            full_message = self.encode_full_message(self.formate_message("information:::Connected to the server, port " + str(self.port)))
+            self.broadcast(self.formate_message(f"{ServerAction.info}:::{nickname} joined the chat"), ignore=client)
+            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.info}:::Connected to the server, port " + str(self.port)))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -69,7 +79,7 @@ class server_socket ():
             client.send(full_message)
 
             # SEND EXISTING GROUPS
-            full_message = self.encode_full_message(self.formate_message(f"list of group:::{list(self.groups.keys())}"))
+            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.shareGroups}:::{list(self.groups.keys())}"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -77,7 +87,7 @@ class server_socket ():
             client.send(full_message)
 
             # GIVE ACCESS TO A GROUP DEFAULT
-            full_message = self.encode_full_message(self.formate_message("can access group:::default"))
+            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.allowAccess}:::default"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))
@@ -87,7 +97,7 @@ class server_socket ():
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
-            full_message = self.encode_full_message(self.formate_message("join group:::default"))
+            full_message = self.encode_full_message(self.formate_message(f"{ServerAction.joinGroup}:::default"))
             #send the size of the message
             message_lenght = len(full_message)
             client.send(message_lenght.to_bytes(4, byteorder='big'))

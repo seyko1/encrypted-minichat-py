@@ -4,6 +4,16 @@ import tkinter as tk
 import json
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 
+class ServerAction:
+    info = "information"
+    allowAccess = "give permission to access the given group" #this will allow to create private group later
+    joinGroup = "join the given group"
+    shareGroups = "give a list of existing groups"
+# To perform an action, the server must send a message as the sender,
+# which the "content" must followed the format:
+# => "action:::content of the action"
+
+
 class ClientNetwork:
     def __init__(self, nickname: str, host = 'localhost', port = 5555):
         self.host = host
@@ -86,17 +96,17 @@ class ClientNetwork:
         content = msg[1]
 
         match action:
-            case "information":
+            case ServerAction.info:
                 self.display_callback(content)
-            case "can access group":
+            case ServerAction.allowAccess:
                 self.groups[content]["have access"] = True
-            case "join group":
+            case ServerAction.joinGroup:
                 if not self.groups[content]["have access"]:
                     print(f"You don't have acces to group [{content}]")
                 else:
                     self.actual_group = content
                     print(f"Join group [{content}]")
-            case "list of group":
+            case ServerAction.shareGroups:
                 groups = ast.literal_eval(content)
                 for group in groups:
                     self.groups[group] = {"have access": False}
