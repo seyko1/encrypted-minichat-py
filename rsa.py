@@ -1,8 +1,11 @@
 import math
+from typing import Tuple, TypeAlias
 from Cryptodome.Util.number import getPrime
 
+RsaKeypair: TypeAlias = Tuple[Tuple[int, int], Tuple[int, int]]
+
 # Prend en paramètre une taille de clé exprimée en bits, et renvoie une paire de clé publique/privée de cette taille
-def gen_rsa_keypair(bits):
+def gen_rsa_keypair(bits: int) -> RsaKeypair:
     size = bits // 2
 
     # Définir 2 grands nombres premiers distincts
@@ -28,7 +31,7 @@ def gen_rsa_keypair(bits):
     return ((e, n), (d, n))
 
 # Chiffrement à l'aide du message à chiffrer m, de l'exposant de chiffrement exp et du module de chiffrement n
-def rsa_enc(m, exp, n):
+def rsa_enc(m: str, exp: int, n: int) -> int:
   # Conversion d'une chaine en bytes, puis en entier.
   m_int = int.from_bytes(m.encode("utf-8"), 'big')
 
@@ -39,7 +42,7 @@ def rsa_enc(m, exp, n):
   return rsa_exp(m_int, exp, n)
 
 # Déchiffrement à l'aide du chiffré c, de l'exposant de déchiffrement exp et du module de chiffrement n
-def rsa_dec(c, exp, n):
+def rsa_dec(c: int, exp: int, n: int) -> str:
   m_int = rsa_exp(c, exp, n)
 
   # Conversion inverse d'un entier en chaine de caractère.
@@ -48,5 +51,5 @@ def rsa_dec(c, exp, n):
   return m
 
 # Exponentiation modulaire à partir d'un message m, d'un exposant exp et du module de chiffrement n
-def rsa_exp(m, exp, n):
+def rsa_exp(m: int, exp: int, n: int) -> int:
   return pow(m, exp, n)
