@@ -55,18 +55,7 @@ class ClientNetwork:
             self.socket.close()
 
     def send_message(self, message, target = "server"):
-        if not self.socket:
-            return
-
-        try:  
-            full_message = common_lib.encode_full_message(self.formate_message(message, target))
-            #send the size of the message
-            message_lenght = len(full_message)
-            self.socket.send(message_lenght.to_bytes(4, byteorder="big"))
-            #send the message
-            self.socket.send(full_message)
-        except Exception as e:
-            print(f"Erreur lors de l'envoi du message : {e}")
+        common_lib.send_message(self.socket, message, self.nickname, target)
     
     def receive_messages(self):
         while True:

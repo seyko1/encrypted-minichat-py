@@ -92,18 +92,8 @@ class server_socket ():
         return common_lib.formate_message(msg, sender, target)
     
 
-    # Protocole to send a message
-    # It MUST be formated BEFORE this function
     def send_message(self, client: socket.socket, msg, sender = "server", target = ""):
-        #formate message
-        msg_formated = common_lib.formate_message(msg, sender, target)
-        #encode message
-        encoded_msg = common_lib.encode_full_message(msg_formated)
-        #send the size of the message
-        message_lenght = len(encoded_msg)
-        client.send(message_lenght.to_bytes(4, byteorder='big'))
-        #send the message
-        client.send(encoded_msg)
+        common_lib.send_message(client, msg, sender, target)
 
 
 

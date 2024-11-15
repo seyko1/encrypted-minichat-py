@@ -1,4 +1,5 @@
 import json
+import socket
 
 
 class ServerAction:
@@ -28,3 +29,24 @@ def formate_message(msg, sender, target) -> dict:
         "target" : target,
     }
     return full_message
+
+
+# Protocole to send a message
+# It MUST be formated BEFORE this function
+def send_message(sckt: socket.socket, message, sender, target):
+    if not sckt:
+        return
+
+    try:
+        #formate message
+        msg_formated = formate_message(message, sender, target)
+        #encode message
+        encoded_msg = encode_full_message(msg_formated)
+        #send the size of the message
+        message_lenght = len(encoded_msg)
+        sckt.send(message_lenght.to_bytes(4, byteorder='big'))
+        #send the message
+        sckt.send(encoded_msg)
+
+    except Exception as e:
+        print(f"Erreur lors de l'envoi du message : {e}")
