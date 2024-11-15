@@ -60,10 +60,7 @@ class ClientNetwork:
     def receive_messages(self):
         while True:
             try:
-                #get the size of the message
-                message_lenght = int.from_bytes(self.socket.recv(4), byteorder='big')
-                #get the message
-                message = common_lib.decode_full_message(self.socket.recv(message_lenght))
+                message = common_lib.receive_message(self.socket)
                 content = message["content"]
                 sender = message["sender"]
                 target = message["target"]

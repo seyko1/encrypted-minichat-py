@@ -27,10 +27,7 @@ class server_socket ():
     def handle(self, client):
         while True:
             try:
-                #get the size of the message
-                message_lenght = int.from_bytes(client.recv(4), byteorder='big')
-                #get the message
-                msg = common_lib.decode_full_message(client.recv(message_lenght))
+                msg = common_lib.receive_message(client)
                 content = msg["content"]
                 sender = msg["sender"]
                 target = msg["target"]
@@ -49,10 +46,7 @@ class server_socket ():
             client, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            #get the size of the message
-            message_lenght = int.from_bytes(client.recv(4))
-            #get the message
-            msg = common_lib.decode_full_message(client.recv(message_lenght))
+            msg = common_lib.receive_message(client)
             nickname = msg["content"]
             self.nicknames.append(nickname)
             self.clients.append(client)

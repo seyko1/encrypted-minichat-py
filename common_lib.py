@@ -50,3 +50,10 @@ def send_message(sckt: socket.socket, message, sender, target):
 
     except Exception as e:
         print(f"Erreur lors de l'envoi du message : {e}")
+
+
+def receive_message(sckt: socket.socket) -> dict:
+    #get the size of the message
+    message_lenght = int.from_bytes(sckt.recv(4), byteorder='big')
+    #get the message
+    return decode_full_message(sckt.recv(message_lenght))
