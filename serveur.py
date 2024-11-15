@@ -58,12 +58,7 @@ class server_socket ():
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
             self.broadcast(f"{ServerAction.info}:::{nickname} joined the chat", ignore=client)
-            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.info}:::Connected to the server, port " + str(self.port)))
-            #send the size of the message
-            message_lenght = len(full_message)
-            client.send(message_lenght.to_bytes(4, byteorder='big'))
-            #send the message
-            client.send(full_message)
+            self.send_message(client, f"{ServerAction.info}:::Connected to the server, port " + str(self.port))
 
             # SEND EXISTING GROUPS
             self.send_message(client, f"{ServerAction.shareGroups}:::{list(self.groups.keys())}")
