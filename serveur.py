@@ -17,16 +17,11 @@ class server_socket ():
 
     # Envoie un message à tous les clients du groupe ciblé
     def broadcast(self, msg, target: str = "default", ignore: socket.socket = None):
-        encoded_msg = common_lib.encode_full_message(msg)
-
         for client in self.groups[target]:
             if ignore is client:
                 continue
-            #send the size of the message
-            message_lenght = len(encoded_msg)
-            client.send(message_lenght.to_bytes(4, byteorder='big'))
-            #send the message
-            client.send(encoded_msg)
+            self.send_message(client, msg)
+
 
     # Recevoir les messages de clients connectés
     def handle(self, client):
@@ -71,30 +66,18 @@ class server_socket ():
             client.send(full_message)
 
             # SEND EXISTING GROUPS
-            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.shareGroups}:::{list(self.groups.keys())}"))
-            #send the size of the message
-            message_lenght = len(full_message)
-            client.send(message_lenght.to_bytes(4, byteorder='big'))
-            #send the message
-            client.send(full_message)
+            full_message = self.formate_message(f"{ServerAction.shareGroups}:::{list(self.groups.keys())}")
+            self.send_message(client, full_message)
 
             # GIVE ACCESS TO A GROUP DEFAULT
-            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.allowAccess}:::default"))
-            #send the size of the message
-            message_lenght = len(full_message)
-            client.send(message_lenght.to_bytes(4, byteorder='big'))
-            #send the message
-            client.send(full_message)
+            full_message = self.formate_message(f"{ServerAction.allowAccess}:::default")
+            self.send_message(client, full_message)
 
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
-            full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.joinGroup}:::default"))
-            #send the size of the message
-            message_lenght = len(full_message)
-            client.send(message_lenght.to_bytes(4, byteorder='big'))
-            #send the message
-            client.send(full_message)
+            full_message = self.formate_message(f"{ServerAction.joinGroup}:::default")
+            self.send_message(client, full_message)
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()
@@ -115,6 +98,19 @@ class server_socket ():
             "target" : target,
         }
         return full_message
+    
+
+    # Protocole to send a message
+    # It MUST be formated BEFORE this function
+    def send_message(self, client: socket.socket, msg_formated: dict):
+        #encode message
+        encoded_msg = common_lib.encode_full_message(msg_formated)
+        #send the size of the message
+        message_lenght = len(encoded_msg)
+        client.send(message_lenght.to_bytes(4, byteorder='big'))
+        #send the message
+        client.send(encoded_msg)
+
 
 
 server = server_socket()
