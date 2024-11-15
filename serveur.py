@@ -16,11 +16,11 @@ class server_socket ():
         self.nicknames = []
 
     # Envoie un message à tous les clients du groupe ciblé
-    def broadcast(self, msg, target: str = "default", ignore: socket.socket = None):
+    def broadcast(self, msg, sender = "server", target: str = "default", ignore: socket.socket = None):
         for client in self.groups[target]:
             if ignore is client:
                 continue
-            self.send_message(client, msg)
+            self.send_message(client, msg, sender, target)
 
 
     # Recevoir les messages de clients connectés
@@ -34,13 +34,13 @@ class server_socket ():
                 content = msg["content"]
                 sender = msg["sender"]
                 target = msg["target"]
-                self.broadcast(self.formate_message(content, sender, target), target)
+                self.broadcast(content, sender, target)
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(self.formate_message(f"{ServerAction.info}:::{nickname} has left group"))
+                self.broadcast(f"{ServerAction.info}:::{nickname} has left group", target=target)
                 self.nicknames.remove(nickname)
                 break
 
@@ -57,7 +57,7 @@ class server_socket ():
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(self.formate_message(f"{ServerAction.info}:::{nickname} joined the chat"), ignore=client)
+            self.broadcast(f"{ServerAction.info}:::{nickname} joined the chat", ignore=client)
             full_message = common_lib.encode_full_message(self.formate_message(f"{ServerAction.info}:::Connected to the server, port " + str(self.port)))
             #send the size of the message
             message_lenght = len(full_message)
@@ -66,18 +66,15 @@ class server_socket ():
             client.send(full_message)
 
             # SEND EXISTING GROUPS
-            full_message = self.formate_message(f"{ServerAction.shareGroups}:::{list(self.groups.keys())}")
-            self.send_message(client, full_message)
+            self.send_message(client, f"{ServerAction.shareGroups}:::{list(self.groups.keys())}")
 
             # GIVE ACCESS TO A GROUP DEFAULT
-            full_message = self.formate_message(f"{ServerAction.allowAccess}:::default")
-            self.send_message(client, full_message)
+            self.send_message(client, f"{ServerAction.allowAccess}:::default")
 
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
-            full_message = self.formate_message(f"{ServerAction.joinGroup}:::default")
-            self.send_message(client, full_message)
+            self.send_message(client, f"{ServerAction.joinGroup}:::default")
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()
@@ -97,7 +94,9 @@ class server_socket ():
 
     # Protocole to send a message
     # It MUST be formated BEFORE this function
-    def send_message(self, client: socket.socket, msg_formated: dict):
+    def send_message(self, client: socket.socket, msg, sender = "server", target = ""):
+        #formate message
+        msg_formated = common_lib.formate_message(msg, sender, target)
         #encode message
         encoded_msg = common_lib.encode_full_message(msg_formated)
         #send the size of the message
