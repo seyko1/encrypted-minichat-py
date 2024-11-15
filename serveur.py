@@ -92,12 +92,7 @@ class server_socket ():
 
 
     def formate_message(self, msg, sender = "server", target = "") -> dict:
-        full_message = {
-            "content": msg,
-            "sender" : sender,
-            "target" : target,
-        }
-        return full_message
+        return common_lib.formate_message(msg, sender, target)
     
 
     # Protocole to send a message

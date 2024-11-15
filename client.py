@@ -116,12 +116,7 @@ class ClientNetwork:
 
 
     def formate_message(self, msg, target = "server") -> dict:
-        full_message = {
-            "content": msg,
-            "sender" : self.nickname,
-            "target" : target,
-        }
-        return full_message
+        return common_lib.formate_message(msg, self.nickname, target)
 
 
 class ClientUi(tk.Tk):

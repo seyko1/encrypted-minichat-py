@@ -19,3 +19,12 @@ def encode_full_message(msg: dict) -> bytes:
 def decode_full_message(msg: bytes) -> dict:
     bytesToStr = msg.decode('utf-8')
     return json.loads(bytesToStr)
+
+
+def formate_message(msg, sender, target) -> dict:
+    full_message = {
+        "content": msg,
+        "sender" : sender,
+        "target" : target,
+    }
+    return full_message
