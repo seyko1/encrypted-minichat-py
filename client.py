@@ -82,18 +82,22 @@ class ClientNetwork:
         match action:
             case ServerAction.info:
                 self.display_callback(content)
+
             case ServerAction.allowAccess:
                 self.groups[content]["have access"] = True
+
             case ServerAction.joinGroup:
                 if not self.groups[content]["have access"]:
                     print(f"You don't have acces to group [{content}]")
                 else:
                     self.actual_group = content
                     print(f"Join group [{content}]")
+
             case ServerAction.shareGroups:
                 groups = ast.literal_eval(content)
                 for group in groups:
                     self.groups[group] = {"have access": False}
+
             case _:
                 print(f"Server tried this action: [{action}] with this content: [{content}], but as no effect, because is undefined.")
 
