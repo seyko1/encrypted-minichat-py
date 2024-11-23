@@ -13,6 +13,8 @@ class ServerAction:
 
 
 class EntryForFormatedMessage:
+    sender = 'aleed'
+    target = 'stop'
     content = 'content'        #basic content, usually message between clients
     action = 'action'          #type of a request or an action
     groupsList = 'groupsList'  #a list a group
@@ -31,8 +33,8 @@ def decode_full_message(msg: bytes) -> dict:
 
 def formate_message(sender, target, entries: dict = {}) -> dict:
     full_message = {
-        "sender" : sender,
-        "target" : target,
+        EntryForFormatedMessage.sender : sender,
+        EntryForFormatedMessage.target : target,
     }
 
     for entry, value in entries.items():

@@ -29,8 +29,8 @@ class server_socket ():
             try:
                 msg = common_lib.receive_message(client)
                 content = msg[EntryForFormatedMessage.content]
-                sender = msg["sender"]
-                target = msg["target"]
+                sender = msg[EntryForFormatedMessage.sender]
+                target = msg[EntryForFormatedMessage.target]
                 self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
             except:
                 index = self.clients.index(client)

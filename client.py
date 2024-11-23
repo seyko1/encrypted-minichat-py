@@ -52,8 +52,8 @@ class ClientNetwork:
         while True:
             try:
                 message: dict = common_lib.receive_message(self.socket)
-                sender = message["sender"]
-                target = message["target"]
+                sender = message[EntryForFormatedMessage.sender]
+                target = message[EntryForFormatedMessage.target]
                 if sender == "server":
                     self.handle_message_from_server(message, message[EntryForFormatedMessage.action])
                     continue
