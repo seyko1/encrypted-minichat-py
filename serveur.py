@@ -77,10 +77,6 @@ class server_socket ():
         self.receive()
 
 
-    def formate_message(self, msg, sender = "server", target = "") -> dict:
-        return common_lib.formate_message(msg, sender, target)
-    
-
     def send_message(self, client: socket.socket, msg, sender = "server", target = "", request = ''):
         common_lib.send_message(client, msg, sender, target, request)
 

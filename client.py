@@ -5,15 +5,6 @@ from common_lib import ServerAction
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 
-class ServerAction:
-    info = "information"
-    allowAccess = "give permission to access the given group" #this will allow to create private group later
-    joinGroup = "join the given group"
-    shareGroups = "give a list of existing groups"
-# To perform an action, the server must send a message as the sender,
-# which the "content" must followed the format:
-# => "action:::content of the action"
-
 
 class ClientNetwork:
     def __init__(self, nickname: str, host = 'localhost', port = 5555):
@@ -101,9 +92,6 @@ class ClientNetwork:
             case _:
                 print(f"Server tried this action: [{action}] with this content: [{content}], but as no effect, because is undefined.")
 
-
-    def formate_message(self, msg, target = "server") -> dict:
-        return common_lib.formate_message(msg, self.nickname, target)
 
 
 class ClientUi(tk.Tk):
