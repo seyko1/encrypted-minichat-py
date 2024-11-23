@@ -1,6 +1,6 @@
 import socket
 import threading
-from common_lib import ServerAction
+from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
 
 
@@ -28,18 +28,18 @@ class server_socket ():
         while True:
             try:
                 msg = common_lib.receive_message(client)
-                content = msg["content"]
+                content = msg[EntryForFormatedMessage.content]
                 sender = msg["sender"]
                 target = msg["target"]
-                self.broadcast({'content': content}, sender, target)
+                self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
                 entries = {
-                    "request": ServerAction.info,
-                    "informations": f"{nickname} has left group"}
+                    EntryForFormatedMessage.request: ServerAction.info,
+                    EntryForFormatedMessage.content: f"{nickname} has left group"}
                 self.broadcast(entries, target=target)
                 self.nicknames.remove(nickname)
                 break
@@ -50,37 +50,37 @@ class server_socket ():
             print(f"Connected with {str(address)}\n")
 
             msg = common_lib.receive_message(client)
-            nickname = msg["content"]
+            nickname = msg[EntryForFormatedMessage.content]
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
             entries_newMember = {
-                "request": ServerAction.info,
-                "informations": f"{nickname} joined the chat"}
+                EntryForFormatedMessage.request: ServerAction.info,
+                EntryForFormatedMessage.info: f"{nickname} joined the chat"}
             self.broadcast(entries_newMember, ignore=client)
             entries_port = {
-                "request": ServerAction.info,
-                "informations": "Connected to the server, port " + str(self.port)}
+                EntryForFormatedMessage.request: ServerAction.info,
+                EntryForFormatedMessage.info: "Connected to the server, port " + str(self.port)}
             self.send_message(client, entries_port)
 
             # SEND EXISTING GROUPS
             entries_groupsList = {
-                "request": ServerAction.shareGroups,
-                "groupsList": f"{list(self.groups.keys())}"}
+                EntryForFormatedMessage.request: ServerAction.shareGroups,
+                EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
             self.send_message(client, entries_groupsList)
 
             # GIVE ACCESS TO A GROUP DEFAULT
             entries_allowAccess = {
-                "request": ServerAction.allowAccess,
-                "groupName": "default"}
+                EntryForFormatedMessage.request: ServerAction.allowAccess,
+                EntryForFormatedMessage.groupName: "default"}
             self.send_message(client, entries_allowAccess)
 
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
             entries_joinGroup = {
-                "request": ServerAction.joinGroup,
-                "groupName": "default"}
+                EntryForFormatedMessage.request: ServerAction.joinGroup,
+                EntryForFormatedMessage.groupName: "default"}
             self.send_message(client, entries_joinGroup)
 
             thread = threading.Thread(target=self.handle, args=(client,))

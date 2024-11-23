@@ -12,6 +12,14 @@ class ServerAction:
 # => "action:::content of the action"
 
 
+class EntryForFormatedMessage:
+    content = 'content'        #basic content, usually message between clients
+    request = 'request/action' #type of a request or an action
+    info = 'info'              #informations, usually from the server, intended for display in the chat
+    groupsList = 'groupsList'  #a list a group
+    groupName = 'groupName'    #name of a specific group
+
+
 def encode_full_message(msg: dict) -> bytes:
     dictToStr = json.dumps(msg)
     return dictToStr.encode('utf-8')
