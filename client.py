@@ -52,10 +52,9 @@ class ClientNetwork:
         while True:
             try:
                 message: dict = common_lib.receive_message(self.socket)
-                sender = message["sender"]
-                target = message["target"]
+                sender = message[EntryForFormatedMessage.sender]
                 if sender == "server":
-                    self.handle_message_from_server(message, message[EntryForFormatedMessage.action])
+                    self.handle_message_from_server(message)
                     continue
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
@@ -67,12 +66,11 @@ class ClientNetwork:
                 break
 
 
-    def handle_message_from_server(self, message: dict, action: str):
-
+    def handle_message_from_server(self, message: dict):
+        action = message[EntryForFormatedMessage.action]
         match action:
             case ServerAction.info:
-                content = message[EntryForFormatedMessage.info]
-                self.display_callback(content)
+                self.display_callback(message[EntryForFormatedMessage.content])
 
             case ServerAction.allowAccess:
                 groupName = message[EntryForFormatedMessage.groupName]
