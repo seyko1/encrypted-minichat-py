@@ -55,7 +55,7 @@ class ClientNetwork:
                 sender = message["sender"]
                 target = message["target"]
                 if sender == "server":
-                    self.handle_message_from_server(message, message[EntryForFormatedMessage.request])
+                    self.handle_message_from_server(message, message[EntryForFormatedMessage.action])
                     continue
 
                 # déléguer l'affichage d'un message dans une fonction de rappel

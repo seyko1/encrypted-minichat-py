@@ -14,7 +14,7 @@ class ServerAction:
 
 class EntryForFormatedMessage:
     content = 'content'        #basic content, usually message between clients
-    request = 'request/action' #type of a request or an action
+    action = 'action'          #type of a request or an action
     info = 'info'              #informations, usually from the server, intended for display in the chat
     groupsList = 'groupsList'  #a list a group
     groupName = 'groupName'    #name of a specific group

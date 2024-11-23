@@ -38,7 +38,7 @@ class server_socket ():
                 client.close()
                 nickname = self.nicknames[index]
                 entries = {
-                    EntryForFormatedMessage.request: ServerAction.info,
+                    EntryForFormatedMessage.action: ServerAction.info,
                     EntryForFormatedMessage.content: f"{nickname} has left group"}
                 self.broadcast(entries, target=target)
                 self.nicknames.remove(nickname)
@@ -55,23 +55,23 @@ class server_socket ():
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
             entries_newMember = {
-                EntryForFormatedMessage.request: ServerAction.info,
+                EntryForFormatedMessage.action: ServerAction.info,
                 EntryForFormatedMessage.info: f"{nickname} joined the chat"}
             self.broadcast(entries_newMember, ignore=client)
             entries_port = {
-                EntryForFormatedMessage.request: ServerAction.info,
+                EntryForFormatedMessage.action: ServerAction.info,
                 EntryForFormatedMessage.info: "Connected to the server, port " + str(self.port)}
             self.send_message(client, entries_port)
 
             # SEND EXISTING GROUPS
             entries_groupsList = {
-                EntryForFormatedMessage.request: ServerAction.shareGroups,
+                EntryForFormatedMessage.action: ServerAction.shareGroups,
                 EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
             self.send_message(client, entries_groupsList)
 
             # GIVE ACCESS TO A GROUP DEFAULT
             entries_allowAccess = {
-                EntryForFormatedMessage.request: ServerAction.allowAccess,
+                EntryForFormatedMessage.action: ServerAction.allowAccess,
                 EntryForFormatedMessage.groupName: "default"}
             self.send_message(client, entries_allowAccess)
 
@@ -79,7 +79,7 @@ class server_socket ():
 
             # ALLOW TO JOIN GROUP
             entries_joinGroup = {
-                EntryForFormatedMessage.request: ServerAction.joinGroup,
+                EntryForFormatedMessage.action: ServerAction.joinGroup,
                 EntryForFormatedMessage.groupName: "default"}
             self.send_message(client, entries_joinGroup)
 
