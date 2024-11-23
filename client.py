@@ -71,7 +71,7 @@ class ClientNetwork:
 
         match action:
             case ServerAction.info:
-                content = message[EntryForFormatedMessage.info]
+                content = message[EntryForFormatedMessage.content]
                 self.display_callback(content)
 
             case ServerAction.allowAccess:

@@ -56,11 +56,11 @@ class server_socket ():
             print(f"Well hello {nickname}\n")
             entries_newMember = {
                 EntryForFormatedMessage.action: ServerAction.info,
-                EntryForFormatedMessage.info: f"{nickname} joined the chat"}
+                EntryForFormatedMessage.content: f"{nickname} joined the chat"}
             self.broadcast(entries_newMember, ignore=client)
             entries_port = {
                 EntryForFormatedMessage.action: ServerAction.info,
-                EntryForFormatedMessage.info: "Connected to the server, port " + str(self.port)}
+                EntryForFormatedMessage.content: "Connected to the server, port " + str(self.port)}
             self.send_message(client, entries_port)
 
             # SEND EXISTING GROUPS
