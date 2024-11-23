@@ -16,11 +16,11 @@ class server_socket ():
         self.nicknames = []
 
     # Envoie un message à tous les clients du groupe ciblé
-    def broadcast(self, msg, sender = "server", target: str = "default", request = '', ignore: socket.socket = None):
+    def broadcast(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
         for client in self.groups[target]:
             if ignore is client:
                 continue
-            self.send_message(client, msg, sender, target, request)
+            self.send_message(client, entries, sender, target)
 
 
     # Recevoir les messages de clients connectés
@@ -31,13 +31,16 @@ class server_socket ():
                 content = msg["content"]
                 sender = msg["sender"]
                 target = msg["target"]
-                self.broadcast(content, sender, target)
+                self.broadcast({'content': content}, sender, target)
             except:
                 index = self.clients.index(client)
                 self.clients.remove(client)
                 client.close()
                 nickname = self.nicknames[index]
-                self.broadcast(f"{nickname} has left group", target=target, request=ServerAction.info)
+                entries = {
+                    "request": ServerAction.info,
+                    "informations": f"{nickname} has left group"}
+                self.broadcast(entries, target=target)
                 self.nicknames.remove(nickname)
                 break
 
@@ -51,19 +54,34 @@ class server_socket ():
             self.nicknames.append(nickname)
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
-            self.broadcast(f"{nickname} joined the chat", ignore=client, request=ServerAction.info)
-            self.send_message(client, "Connected to the server, port " + str(self.port), request=ServerAction.info)
+            entries_newMember = {
+                "request": ServerAction.info,
+                "informations": f"{nickname} joined the chat"}
+            self.broadcast(entries_newMember, ignore=client)
+            entries_port = {
+                "request": ServerAction.info,
+                "informations": "Connected to the server, port " + str(self.port)}
+            self.send_message(client, entries_port)
 
             # SEND EXISTING GROUPS
-            self.send_message(client, f"{list(self.groups.keys())}", request=ServerAction.shareGroups)
+            entries_groupsList = {
+                "request": ServerAction.shareGroups,
+                "groupsList": f"{list(self.groups.keys())}"}
+            self.send_message(client, entries_groupsList)
 
             # GIVE ACCESS TO A GROUP DEFAULT
-            self.send_message(client, "default", request=ServerAction.allowAccess)
+            entries_allowAccess = {
+                "request": ServerAction.allowAccess,
+                "groupName": "default"}
+            self.send_message(client, entries_allowAccess)
 
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
-            self.send_message(client, "default", request=ServerAction.joinGroup)
+            entries_joinGroup = {
+                "request": ServerAction.joinGroup,
+                "groupName": "default"}
+            self.send_message(client, entries_joinGroup)
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()
@@ -77,8 +95,8 @@ class server_socket ():
         self.receive()
 
 
-    def send_message(self, client: socket.socket, msg, sender = "server", target = "", request = ''):
-        common_lib.send_message(client, msg, sender, target, request)
+    def send_message(self, client: socket.socket, entries: dict, sender = "server", target = ""):
+        common_lib.send_message(client, sender, target, entries)
 
 
 

@@ -33,7 +33,7 @@ class ClientNetwork:
 
         try:
             self.socket.connect((self.host, self.port))
-            self.send_message(self.nickname)
+            self.send_message({'content': self.nickname})
 
             # lancer le thread de reception des messages
             self.receive_thread = threading.Thread(target=self.receive_messages)
@@ -45,52 +45,55 @@ class ClientNetwork:
         if self.socket:
             self.socket.close()
 
-    def send_message(self, message, target = "server", request = ''):
-        common_lib.send_message(self.socket, message, self.nickname, target, request)
+    def send_message(self, entries: dict = {}, target = "server"):
+        common_lib.send_message(self.socket, self.nickname, target, entries)
     
     def receive_messages(self):
         while True:
             try:
                 message: dict = common_lib.receive_message(self.socket)
-                content = message["content"]
                 sender = message["sender"]
                 target = message["target"]
                 if sender == "server":
-                    self.handle_message_from_server(content, message['request'])
+                    self.handle_message_from_server(message, message['request'])
                     continue
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
-                    self.display_callback(content, sender)
+                    self.display_callback(message['content'], sender)
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
                 break
 
 
-    def handle_message_from_server(self, content: str, action: str):
+    def handle_message_from_server(self, message: dict, action: str):
 
         match action:
             case ServerAction.info:
+                content = message['informations']
                 self.display_callback(content)
 
             case ServerAction.allowAccess:
-                self.groups[content]["have access"] = True
+                groupName = message['groupName']
+                self.groups[groupName]["have access"] = True
 
             case ServerAction.joinGroup:
-                if not self.groups[content]["have access"]:
-                    print(f"You don't have acces to group [{content}]")
+                groupName = message['groupName']
+                if not self.groups[groupName]["have access"]:
+                    print(f"You don't have acces to group [{groupName}]")
                 else:
-                    self.actual_group = content
-                    print(f"Join group [{content}]")
+                    self.actual_group = groupName
+                    print(f"Join group [{groupName}]")
 
             case ServerAction.shareGroups:
-                groups = ast.literal_eval(content)
+                groups = message['groupsList']
+                groups = ast.literal_eval(groups)
                 for group in groups:
                     self.groups[group] = {"have access": False}
 
             case _:
-                print(f"Server tried this action: [{action}] with this content: [{content}], but as no effect, because is undefined.")
+                print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
 
 
@@ -173,7 +176,7 @@ class ClientUi(tk.Tk):
 
     def send_message(self, message):
         if (message):
-            self.network_client.send_message(message, self.network_client.actual_group)
+            self.network_client.send_message({'content': message}, self.network_client.actual_group)
 
     def display_messages(self, message: str, sender = "server"):
         if not message:
