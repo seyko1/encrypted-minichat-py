@@ -60,4 +60,9 @@ def receive_message(sckt: socket.socket) -> dict:
     #get the size of the message
     message_lenght = int.from_bytes(sckt.recv(4), byteorder='big')
     #get the message
-    return decode_full_message(sckt.recv(message_lenght))
+    message = decode_full_message(sckt.recv(message_lenght))
+    print()
+    print("Message received")
+    for key, value in message.items():
+        print(f'{key}: {value}')
+    return message
