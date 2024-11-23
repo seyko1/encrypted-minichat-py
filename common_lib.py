@@ -22,24 +22,28 @@ def decode_full_message(msg: bytes) -> dict:
     return json.loads(bytesToStr)
 
 
-def formate_message(msg, sender, target) -> dict:
+def formate_message(msg, sender, target, request = '') -> dict:
     full_message = {
         "content": msg,
         "sender" : sender,
         "target" : target,
     }
+
+    if request:
+        full_message['request'] = request
+
     return full_message
 
 
 # Protocole to send a message
 # It MUST be formated BEFORE this function
-def send_message(sckt: socket.socket, message, sender, target):
+def send_message(sckt: socket.socket, message, sender, target, request = ''):
     if not sckt:
         return
 
     try:
         #formate message
-        msg_formated = formate_message(message, sender, target)
+        msg_formated = formate_message(message, sender, target, request)
         #encode message
         encoded_msg = encode_full_message(msg_formated)
         #send the size of the message

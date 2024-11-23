@@ -54,18 +54,18 @@ class ClientNetwork:
         if self.socket:
             self.socket.close()
 
-    def send_message(self, message, target = "server"):
-        common_lib.send_message(self.socket, message, self.nickname, target)
+    def send_message(self, message, target = "server", request = ''):
+        common_lib.send_message(self.socket, message, self.nickname, target, request)
     
     def receive_messages(self):
         while True:
             try:
-                message = common_lib.receive_message(self.socket)
+                message: dict = common_lib.receive_message(self.socket)
                 content = message["content"]
                 sender = message["sender"]
                 target = message["target"]
                 if sender == "server":
-                    self.handle_message_from_server(content)
+                    self.handle_message_from_server(content, message['request'])
                     continue
 
                 # déléguer l'affichage d'un message dans une fonction de rappel
@@ -77,10 +77,7 @@ class ClientNetwork:
                 break
 
 
-    def handle_message_from_server(self, message: str):
-        msg = message.split(':::')
-        action = msg[0]
-        content = msg[1]
+    def handle_message_from_server(self, content: str, action: str):
 
         match action:
             case ServerAction.info:
