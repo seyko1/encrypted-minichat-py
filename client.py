@@ -116,6 +116,8 @@ class ClientNetwork:
                 groups = ast.literal_eval(groups)
                 for group in groups:
                     self.groups[group] = {}
+                if self.ui.current_ui == "groupChoice_ui":
+                    self.ui.groupChoice_ui()
 
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
@@ -130,6 +132,7 @@ class ClientUi(tk.Tk):
 
         self.network_client: ClientNetwork = None
         self.nickname = None
+        self.current_ui: str = "" #used to reload the groupe page when a new group comes
 
         self.connection_ui()
 
@@ -173,6 +176,7 @@ class ClientUi(tk.Tk):
     # Création d'une interface recueillant le nom de l'utilisateur
     def connection_ui(self):
         self.clear_ui()
+        self.current_ui = "connection_ui"
 
         self.title(f"{ClientUi.TITLE}")
         self.geometry("1440x1024")
@@ -275,6 +279,7 @@ class ClientUi(tk.Tk):
 
     def conversation_ui(self, groupName: str):
         self.clear_ui()
+        self.current_ui = "conversation_ui"
 
         self.title(f"{self.nickname} in {groupName}")
         self.geometry('400x500')
@@ -327,6 +332,7 @@ class ClientUi(tk.Tk):
 
     def groupChoice_ui(self):
         self.clear_ui()
+        self.current_ui = "groupChoice_ui"
 
         self.title(f"{self.nickname} - Groupes")
         self.geometry("600x500")
@@ -353,6 +359,7 @@ class ClientUi(tk.Tk):
 
     def newGroup_ui(self):
         self.clear_ui()
+        self.current_ui = "newGroup_ui"
         #destroy the content of the previous window
         if self.rootLayout:
             self.rootLayout.destroy()
