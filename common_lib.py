@@ -12,6 +12,10 @@ class ServerAction:
 # => "action:::content of the action"
 
 
+class ClientAction:
+    requestJoinGroup = "requestJoinGroup"
+
+
 class EntryForFormatedMessage:
     sender = 'aleed'
     target = 'stop'
