@@ -63,28 +63,11 @@ class server_socket ():
             self.clients.append(client)
             print(f"Well hello {nickname}\n")
 
-            entries_newMember = {
-                EntryForFormatedMessage.action: ServerAction.info,
-                EntryForFormatedMessage.content: f"{nickname} joined the chat"}
-            self.broadcast(entries_newMember, ignore=client.socket)
-            entries_port = {
-                EntryForFormatedMessage.action: ServerAction.info,
-                EntryForFormatedMessage.content: "Connected to the server, port " + str(self.port)}
-            self.send_message(client.socket, entries_port)
-
             # SEND EXISTING GROUPS
             entries_groupsList = {
                 EntryForFormatedMessage.action: ServerAction.shareGroups,
                 EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
             self.send_message(client.socket, entries_groupsList)
-
-            self.groups["default"].append(client)
-
-            # ALLOW TO JOIN GROUP
-            entries_joinGroup = {
-                EntryForFormatedMessage.action: ServerAction.joinGroup,
-                EntryForFormatedMessage.groupName: "default"}
-            self.send_message(client.socket, entries_joinGroup)
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()

@@ -105,7 +105,7 @@ class ClientUi(tk.Tk):
         if not nickname:
             return
         self.nickname = nickname
-        self.conversation_ui()
+        self.clear_ui()
         self.start_network_connection(nickname)
 
 
