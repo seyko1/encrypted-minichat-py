@@ -101,13 +101,21 @@ class ClientNetwork:
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
 
-    def __init__(self, nickname: str): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
+    def __init__(self): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
         super().__init__()
 
         self.network_client: ClientNetwork = None
-        self.nickname = nickname #existe temporairement, permet d'obtenir le nom avant le création de l'objet UI
+        self.nickname = None
 
         self.connection_ui()
+
+
+    def try_to_connect(self, nickname: str):
+        if not nickname:
+            return
+        self.nickname = nickname
+        self.group_ui()
+        self.start_network_connection(nickname)
 
 
     def start_network_connection(self, nickname: str):
@@ -123,14 +131,106 @@ class ClientUi(tk.Tk):
 
 
     # Création d'une interface recueillant le nom de l'utilisateur
-    # !! pour l'instant, il n'y a pas d'interface
     def connection_ui(self):
-        #self.nickname = input("Entrez votre nom: ")
-        # je voulais faire l'input ici, ce qui se ferait avec une interface,
-        # mais en passant par le terminale, c'est mieux de faire l'input avant l'initialisation de l'objet UI
-        # sinon, ça ouvre une interface vide, puis il faut rebasculer dans le terminal pour entrer le nom
-        self.group_ui()
-        self.start_network_connection(self.nickname) #oui c'est bizarre de donner un nom qu'on a déjà, mais plus tard, c'est ici, qu'il sera créé
+        self.clear_ui()
+
+        self.title(f"{ClientUi.TITLE}")
+        self.geometry("1440x1024")
+        self.configure(bg="#E2D0F8")
+
+        canvas = tk.Canvas(
+            self,
+            bg="#E2D0F8",
+            height=1024,
+            width=1440,
+            bd=0,
+            highlightthickness=0,
+            relief="ridge"
+        )
+        canvas.place(x=0, y=0)
+
+        # Cadre entrée pseudo
+        self.nickname_entry_image = tk.PhotoImage(file="assets/frame0/nickname_entry.png")
+        nickname_entry_bg = canvas.create_image(
+            428.0,
+            512.5,
+            image=self.nickname_entry_image
+        )
+
+        # Entrée du pseudo
+        self.nickname_entry = tk.Entry(
+            self,
+            bd=0,
+            bg="#B5A8A8",
+            fg="#000716",
+            highlightthickness=0
+        )
+        self.nickname_entry.place(
+            x=63.0,
+            y=457.0,
+            width=730.0,
+            height=109.0
+        )
+
+        canvas.create_text(
+            62.0,
+            418.0,
+            anchor="nw",
+            text="Pseudo",
+            fill="#317874",
+            font=("Montserrat SemiBold", 32 * -1)
+        )
+
+        # Bouton login qui lance la génération des clés et switch à la main_page
+        self.entry_button_image = tk.PhotoImage(file="assets/frame0/entry_button.png")
+        button = tk.Button(
+            image=self.entry_button_image,
+            borderwidth=0,
+            highlightthickness=0,
+            command=lambda: self.try_to_connect(self.nickname_entry.get()),
+            relief="flat"
+        )
+        button.place(
+            x=164.0,
+            y=696.0,
+            width=528.0,
+            height=100.0
+        )
+
+        canvas.create_text(
+            248.0,
+            161.0,
+            anchor="nw",
+            text="Connexion",
+            fill="#317874",
+            font=("Montserrat SemiBold", 64 * -1)
+        )
+
+        # Rectangle bleu
+        canvas.create_rectangle(
+            878.0,
+            0.0,
+            1440.0,
+            1024.0,
+            fill="#317874",
+            outline=""
+        )
+
+        self.logo_image = tk.PhotoImage(file="assets/frame0/logo_chat.png")
+        image_1 = canvas.create_image(
+            1159.0,
+            512.0,
+            image=self.logo_image
+        )
+
+        canvas.create_text(
+            1024.0,
+            284.0,
+            anchor="nw",
+            text="RSCHAT",
+            fill="#FFFFFF",
+            font=("Montserrat SemiBold", 64 * -1)
+        )
 
 
     def group_ui(self):
@@ -207,8 +307,6 @@ class ClientUi(tk.Tk):
         self.input_space.delete(0, tk.END) # vide l'input
 
 
-nickname = input("Entrez votre nom: ") #est voué à disparaitre
-
-client_ui = ClientUi(nickname) #l'argument ne sera plus donné ici, lorsqu'une interface de connection existera
+client_ui = ClientUi()
 
 client_ui.mainloop()
