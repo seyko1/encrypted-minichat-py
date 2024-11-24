@@ -47,6 +47,15 @@ class ClientNetwork:
         if self.socket:
             self.socket.close()
 
+
+    def joinGroup(self, groupName):
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.requestJoinGroup,
+            EntryForFormatedMessage.groupName: groupName
+        }
+        self.send_message(request)
+
+
     def send_message(self, entries: dict = {}, target = "server"):
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
@@ -81,6 +90,7 @@ class ClientNetwork:
                 groupName = message[EntryForFormatedMessage.groupName]
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")
+                self.ui.conversation_ui(groupName)
 
             case ServerAction.shareGroups:
                 groups = message[EntryForFormatedMessage.groupsList]
@@ -111,6 +121,11 @@ class ClientUi(tk.Tk):
         self.nickname = nickname
         self.start_network_connection(nickname)
         self.groupChoice_ui()
+    
+
+    def try_to_join_group(self, groupName: str):
+        print(f'Try to join "{groupName}"')
+        self.network_client.joinGroup(groupName)
 
 
     def start_network_connection(self, nickname: str):
@@ -298,7 +313,7 @@ class ClientUi(tk.Tk):
             button = tk.Button(
                 groupButtonsFrame,
                 text = groupName,
-                command = lambda groupName = groupName: print(f'click on the group "{groupName}"'))
+                command = lambda groupName = groupName: self.try_to_join_group(groupName))
             button.grid(row = i)
 
 

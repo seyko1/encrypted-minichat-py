@@ -87,6 +87,51 @@ class server_socket ():
         action = message[common_lib.EntryForFormatedMessage.action]
 
         match action:
+            case common_lib.ClientAction.requestJoinGroup:
+                groupName = message[common_lib.EntryForFormatedMessage.groupName]
+
+                ## TODO
+                ##
+                ## must add the protocole to give the key of the group here
+                ##
+
+                ## Here's the protocole without the key.
+                ## Must be changed.
+                senderName = message[common_lib.EntryForFormatedMessage.sender]
+                groupMembers: list[Client] = self.groups[groupName]
+
+                # determine if the client is already a member
+                isInGroup = False
+                for client in groupMembers:
+                    nickname = client.nickname
+                    if nickname == senderName:
+                        isInGroup = True
+                        break
+                
+                client = Client.get_client(senderName, self.clients)
+                #prepare the message to the group
+                msg = ''
+                if isInGroup:
+                    msg = f'{senderName} has rejoin'
+                else:
+                    self.groups[groupName].append(client)
+                    msg = f'{senderName} has join'
+
+                #broadcast that client has join
+                joinMessage = {
+                    common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.info,
+                    common_lib.EntryForFormatedMessage.content: msg
+                    }
+                # self.broadcast(joinMessage, target = groupName, ignore=client.socket)
+
+                #make the client join the group
+                makeJoin = {
+                    common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.joinGroup,
+                    common_lib.EntryForFormatedMessage.groupName: groupName}
+                self.send_message(client.socket, makeJoin)
+
+                ## Must be changed.
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 
