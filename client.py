@@ -228,10 +228,10 @@ class ClientUi(tk.Tk):
         )
 
 
-    def conversation_ui(self):
+    def conversation_ui(self, groupName: str):
         self.clear_ui()
 
-        self.title(f"{ClientUi.TITLE} - {self.nickname}")
+        self.title(f"{self.nickname} in {groupName}")
         self.geometry('400x500')
         self.configure(bg='white')
         
