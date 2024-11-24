@@ -83,6 +83,8 @@ class ClientNetwork:
             case ServerAction.shareGroups:
                 groups = message[EntryForFormatedMessage.groupsList]
                 groups = ast.literal_eval(groups)
+                for group in groups:
+                    self.groups[group] = {}
 
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
