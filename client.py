@@ -75,23 +75,14 @@ class ClientNetwork:
                 content = message[EntryForFormatedMessage.content]
                 self.display_callback(content)
 
-            case ServerAction.allowAccess:
-                groupName = message[EntryForFormatedMessage.groupName]
-                self.groups[groupName]["have access"] = True
-
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
-                if not self.groups[groupName]["have access"]:
-                    print(f"You don't have acces to group [{groupName}]")
-                else:
-                    self.actual_group = groupName
-                    print(f"Join group [{groupName}]")
+                self.actual_group = groupName
+                print(f"Join group [{groupName}]")
 
             case ServerAction.shareGroups:
                 groups = message[EntryForFormatedMessage.groupsList]
                 groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {"have access": False}
 
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")

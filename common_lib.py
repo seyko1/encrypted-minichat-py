@@ -4,7 +4,6 @@ import socket
 
 class ServerAction:
     info = "information"
-    allowAccess = "give permission to access the given group" #this will allow to create private group later
     joinGroup = "join the given group"
     shareGroups = "give a list of existing groups"
 # To perform an action, the server must send a message as the sender,

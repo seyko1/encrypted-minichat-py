@@ -78,12 +78,6 @@ class server_socket ():
                 EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
             self.send_message(client.socket, entries_groupsList)
 
-            # GIVE ACCESS TO A GROUP DEFAULT
-            entries_allowAccess = {
-                EntryForFormatedMessage.action: ServerAction.allowAccess,
-                EntryForFormatedMessage.groupName: "default"}
-            self.send_message(client.socket, entries_allowAccess)
-
             self.groups["default"].append(client)
 
             # ALLOW TO JOIN GROUP
