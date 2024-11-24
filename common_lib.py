@@ -5,6 +5,7 @@ import socket
 class ServerAction:
     info = "info"               #give data supposed to be shown in the chat
     joinGroup = "joinGroup"     #allow the client to join a group
+    leaveGroup = "leaveGroup"
     shareGroups = "shareGroups" #give the existing groups to the client
 # To perform an action, the server must send a message as the sender,
 # which the "content" must followed the format:
@@ -14,6 +15,7 @@ class ServerAction:
 class ClientAction:
     requestJoinGroup = "requestJoinGroup"
     requestAddGroup = "requestAddGroup"
+    requestLeaveGroup = "requestLeaveGroup"
 
 
 class EntryForFormatedMessage:

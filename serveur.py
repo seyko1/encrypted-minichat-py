@@ -151,6 +151,25 @@ class server_socket ():
                 for client in self.clients:
                     self.send_message(client.socket, groupsListUpdate)
 
+            case common_lib.ClientAction.requestLeaveGroup:
+                groupName = message[EntryForFormatedMessage.groupName]
+                senderName = message[common_lib.EntryForFormatedMessage.sender]
+                client = Client.get_client(senderName, self.clients)
+
+                #remove client
+                self.groups[groupName].remove(client)
+                leaveGroup = {
+                    EntryForFormatedMessage.action: ServerAction.leaveGroup,
+                    EntryForFormatedMessage.groupName: groupName}
+                self.send_message(client.socket, leaveGroup)
+
+                #broadcast that someone leave
+                clientHasLeave = {
+                    EntryForFormatedMessage.action: ServerAction.info,
+                    EntryForFormatedMessage.content: f'{senderName} has leave'}
+                self.broadcast(clientHasLeave, target=groupName)
+
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 

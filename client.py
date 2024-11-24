@@ -56,6 +56,14 @@ class ClientNetwork:
         self.send_message(request)
 
 
+    def leaveGroup(self, groupName):
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.requestLeaveGroup,
+            EntryForFormatedMessage.groupName: groupName
+        }
+        self.send_message(request)
+
+
     def addGroup(self, groupName):
         request = {
             EntryForFormatedMessage.action: common_lib.ClientAction.requestAddGroup,
@@ -99,6 +107,9 @@ class ClientNetwork:
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")
                 self.ui.conversation_ui(groupName)
+            
+            case ServerAction.leaveGroup:
+                self.ui.groupChoice_ui()
 
             case ServerAction.shareGroups:
                 groups = message[EntryForFormatedMessage.groupsList]
@@ -134,6 +145,11 @@ class ClientUi(tk.Tk):
     def try_to_join_group(self, groupName: str):
         print(f'Try to join "{groupName}"')
         self.network_client.joinGroup(groupName)
+
+
+    def try_to_leave_group(self, groupName: str):
+        print(f'Try to leave "{groupName}"')
+        self.network_client.leaveGroup(groupName)
 
 
     def try_create_group(self, groupName):
@@ -279,6 +295,7 @@ class ClientUi(tk.Tk):
         self.txt = tk.StringVar()
         self.input_space: tk.Entry = tk.Entry(self.text_bar, textvariable=self.txt)
         self.send_button = tk.Button(self.text_bar, text = 'Send', command = lambda:self.send_message(self.txt.get()))
+        self.exit_button = tk.Button(self.text_bar, text = 'Leave', command = lambda: self.try_to_leave_group(groupName))
 
         # paramétrage du scrollbar
         chat_scroll = tk.Scrollbar(self.connect_interf, orient=tk.VERTICAL)
@@ -297,12 +314,13 @@ class ClientUi(tk.Tk):
         self.connect_interf.grid()
         
         # espace des messages
-        self.text_bar.grid(row=2, column=0, columnspan=4)
+        self.text_bar.grid(row=2, column=0, columnspan=5)
         
         # espace de l'input
-        self.chatbox.grid(row=1, column=0, columnspan=4)
-        self.input_space.grid(row=0, column=1)
-        self.send_button.grid(row=0, column=2)
+        self.chatbox.grid(row=1, column=0, columnspan=5)
+        self.exit_button.grid(row=0, column=1)
+        self.input_space.grid(row=0, column=2)
+        self.send_button.grid(row=0, column=3)
 
         self.display_messages("<connecté>")
 
