@@ -2,12 +2,22 @@ import socket
 import threading
 from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
+from typing import Optional
 
 
 class Client ():
     def __init__(self, nickname: str, socket: socket.socket):
         self.nickname = nickname
         self.socket = socket
+
+    @staticmethod
+    def get_client(nickname: str, clientsList: list[Optional['Client']]) -> Optional['Client']:
+        for client in clientsList:
+            if client.nickname == nickname:
+                return client
+        
+        # should not happen
+        return None
 
 
 class server_socket ():
