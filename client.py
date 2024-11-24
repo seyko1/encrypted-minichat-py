@@ -128,6 +128,11 @@ class ClientUi(tk.Tk):
         self.network_client.joinGroup(groupName)
 
 
+    def try_create_group(self, groupName):
+        print(f'Try to create the groupe "{groupName}"')
+        self.groupChoice_ui()
+
+
     def start_network_connection(self, nickname: str):
         self.network_client = ClientNetwork(nickname, self, host = "localhost", port = 5555)
 
@@ -304,6 +309,9 @@ class ClientUi(tk.Tk):
         self.rootLayout = majorFrame
         majorFrame.grid(sticky='nsew')
 
+        createGroup = tk.Button(majorFrame, text = '+', command=lambda: self.newGroup_ui())
+        createGroup.grid(row = 0)
+
         groupButtonsFrame = tk.Frame(majorFrame)
         groupButtonsFrame.grid(row=1)
 
@@ -314,6 +322,26 @@ class ClientUi(tk.Tk):
                 text = groupName,
                 command = lambda groupName = groupName: self.try_to_join_group(groupName))
             button.grid(row = i)
+
+
+    def newGroup_ui(self):
+        self.clear_ui()
+        #destroy the content of the previous window
+        if self.rootLayout:
+            self.rootLayout.destroy()
+
+        majorFrame = tk.Frame(self)
+        self.rootLayout = majorFrame
+        majorFrame.grid(sticky='nsew')
+
+        cancel = tk.Button(majorFrame, text="Annuler", command=lambda: self.groupChoice_ui())
+        cancel.grid(row=0)
+
+        entry = tk.Entry(majorFrame)
+        entry.grid(row=1)
+
+        add = tk.Button(majorFrame, text='Ajouter', command=lambda:self.try_create_group(entry.get()))
+        add.grid(row=2)
 
 
     def send_message(self, message):
