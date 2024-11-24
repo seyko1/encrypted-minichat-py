@@ -117,6 +117,11 @@ class ClientUi(tk.Tk):
         self.network_client.connect()
 
 
+    def clear_ui(self):
+        for layout in self.winfo_children():
+            layout.destroy()
+
+
     # Création d'une interface recueillant le nom de l'utilisateur
     # !! pour l'instant, il n'y a pas d'interface
     def connection_ui(self):
@@ -129,6 +134,8 @@ class ClientUi(tk.Tk):
 
 
     def init_ui(self):
+        self.clear_ui()
+
         self.title(f"{ClientUi.TITLE} - {self.nickname}")
         self.geometry('400x500')
         self.configure(bg='white')
