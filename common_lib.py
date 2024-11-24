@@ -16,8 +16,8 @@ class ClientAction:
 
 
 class EntryForFormatedMessage:
-    sender = 'aleed'
-    target = 'stop'
+    sender = 'sender'
+    target = 'target'
     content = 'content'        #basic content, usually message between clients
     action = 'action'          #type of a request or an action
     groupsList = 'groupsList'  #a list a group
