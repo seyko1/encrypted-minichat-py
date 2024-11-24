@@ -3,9 +3,9 @@ import socket
 
 
 class ServerAction:
-    info = "information"
-    joinGroup = "join the given group"
-    shareGroups = "give a list of existing groups"
+    info = "info"               #give data supposed to be shown in the chat
+    joinGroup = "joinGroup"     #allow the client to join a group
+    shareGroups = "shareGroups" #give the existing groups to the client
 # To perform an action, the server must send a message as the sender,
 # which the "content" must followed the format:
 # => "action:::content of the action"
