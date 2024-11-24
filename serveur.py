@@ -43,13 +43,13 @@ class server_socket ():
         while True:
             try:
                 msg = common_lib.receive_message(client.socket)
-                content = msg[EntryForFormatedMessage.content]
-                sender = msg[EntryForFormatedMessage.sender]
                 target = msg[EntryForFormatedMessage.target]
 
                 if target == 'server':
                     self.handle_action_from_client(msg)
                 else:
+                    content = msg[EntryForFormatedMessage.content]
+                    sender = msg[EntryForFormatedMessage.sender]
                     self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
 
             except:
