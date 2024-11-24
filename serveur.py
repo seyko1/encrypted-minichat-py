@@ -27,7 +27,7 @@ class server_socket ():
 
         self.server: socket.socket = None
 
-        self.groups: dict[str | Client] = {"default": []}
+        self.groups: dict[str | Client] = {"default": [], "L3B": [], "Les Monsieurs": [], "Les madames": []}
         self.clients: list[Client] = []
 
     # Envoie un message à tous les clients du groupe ciblé
