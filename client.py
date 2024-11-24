@@ -114,7 +114,7 @@ class ClientUi(tk.Tk):
         if not nickname:
             return
         self.nickname = nickname
-        self.group_ui()
+        self.conversation_ui()
         self.start_network_connection(nickname)
 
 
@@ -233,7 +233,7 @@ class ClientUi(tk.Tk):
         )
 
 
-    def group_ui(self):
+    def conversation_ui(self):
         self.clear_ui()
 
         self.title(f"{ClientUi.TITLE} - {self.nickname}")
