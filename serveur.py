@@ -122,7 +122,7 @@ class server_socket ():
                     common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.info,
                     common_lib.EntryForFormatedMessage.content: msg
                     }
-                # self.broadcast(joinMessage, target = groupName, ignore=client.socket)
+                self.broadcast(joinMessage, target = groupName, ignore=client.socket)
 
                 #make the client join the group
                 makeJoin = {
