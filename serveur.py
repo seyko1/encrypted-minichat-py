@@ -132,6 +132,25 @@ class server_socket ():
 
                 ## Must be changed.
 
+            case common_lib.ClientAction.requestAddGroup:
+                groupName = message[EntryForFormatedMessage.groupName]
+
+                # check if it exist
+                for group in list(self.groups.keys()):
+                    if group == groupName:
+                        return
+                
+                #create the group
+                self.groups[groupName] = []
+                
+                #broadcast all the groups
+                groupsListUpdate = {
+                    EntryForFormatedMessage.action: ServerAction.shareGroups,
+                    EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
+                
+                for client in self.clients:
+                    self.send_message(client.socket, groupsListUpdate)
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 

@@ -13,6 +13,7 @@ class ServerAction:
 
 class ClientAction:
     requestJoinGroup = "requestJoinGroup"
+    requestAddGroup = "requestAddGroup"
 
 
 class EntryForFormatedMessage:

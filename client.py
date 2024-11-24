@@ -56,6 +56,14 @@ class ClientNetwork:
         self.send_message(request)
 
 
+    def addGroup(self, groupName):
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.requestAddGroup,
+            EntryForFormatedMessage.groupName: groupName
+        }
+        self.send_message(request)
+
+
     def send_message(self, entries: dict = {}, target = "server"):
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
@@ -130,6 +138,7 @@ class ClientUi(tk.Tk):
 
     def try_create_group(self, groupName):
         print(f'Try to create the groupe "{groupName}"')
+        self.network_client.addGroup(groupName)
         self.groupChoice_ui()
 
 
