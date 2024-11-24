@@ -129,11 +129,11 @@ class ClientUi(tk.Tk):
         # je voulais faire l'input ici, ce qui se ferait avec une interface,
         # mais en passant par le terminale, c'est mieux de faire l'input avant l'initialisation de l'objet UI
         # sinon, ça ouvre une interface vide, puis il faut rebasculer dans le terminal pour entrer le nom
-        self.init_ui()
+        self.group_ui()
         self.start_network_connection(self.nickname) #oui c'est bizarre de donner un nom qu'on a déjà, mais plus tard, c'est ici, qu'il sera créé
 
 
-    def init_ui(self):
+    def group_ui(self):
         self.clear_ui()
 
         self.title(f"{ClientUi.TITLE} - {self.nickname}")
