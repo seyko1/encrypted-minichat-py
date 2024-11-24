@@ -36,7 +36,12 @@ class server_socket ():
                 content = msg[EntryForFormatedMessage.content]
                 sender = msg[EntryForFormatedMessage.sender]
                 target = msg[EntryForFormatedMessage.target]
-                self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
+
+                if target == 'server':
+                    self.handle_action_from_client(msg)
+                else:
+                    self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
+
             except:
                 self.clients.remove(client)
                 client.socket.close()
@@ -89,6 +94,14 @@ class server_socket ():
 
             thread = threading.Thread(target=self.handle, args=(client,))
             thread.start()
+
+
+    def handle_action_from_client(self, message: dict):
+        action = message[common_lib.EntryForFormatedMessage.action]
+
+        match action:
+            case _:
+                print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 
 
     def start(self):
