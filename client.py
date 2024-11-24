@@ -107,8 +107,8 @@ class ClientUi(tk.Tk):
         if not nickname:
             return
         self.nickname = nickname
-        self.clear_ui()
         self.start_network_connection(nickname)
+        self.groupChoice_ui()
 
 
     def start_network_connection(self, nickname: str):
@@ -274,6 +274,31 @@ class ClientUi(tk.Tk):
         self.send_button.grid(row=0, column=2)
 
         self.display_messages("<connecté>")
+
+
+    def groupChoice_ui(self):
+        self.clear_ui()
+
+        self.title(f"{self.nickname} - Groupes")
+        self.geometry("600x500")
+        self.configure()
+
+        majorFrame = tk.Frame(self)
+        self.rootLayout = majorFrame
+        majorFrame.grid(sticky='nsew')
+
+        groupButtonsFrame = tk.Frame(majorFrame)
+        groupButtonsFrame.grid(row=1)
+
+        #create as many buttons as groups
+        print(self.network_client.groups.keys())
+        for i, groupName in enumerate(self.network_client.groups.keys()):
+            button = tk.Button(
+                groupButtonsFrame,
+                text = groupName,
+                command = lambda groupName = groupName: print(f'click on the group "{groupName}"'))
+            button.grid(row = i)
+
 
     def send_message(self, message):
         if (message):
