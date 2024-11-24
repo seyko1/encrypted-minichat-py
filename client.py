@@ -308,7 +308,6 @@ class ClientUi(tk.Tk):
         groupButtonsFrame.grid(row=1)
 
         #create as many buttons as groups
-        print(self.network_client.groups.keys())
         for i, groupName in enumerate(self.network_client.groups.keys()):
             button = tk.Button(
                 groupButtonsFrame,
