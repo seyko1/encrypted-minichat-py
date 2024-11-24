@@ -4,13 +4,15 @@ import tkinter as tk
 from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
+from typing import Optional
 
 
 class ClientNetwork:
-    def __init__(self, nickname: str, host = 'localhost', port = 5555):
+    def __init__(self, nickname: str, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
         self.host = host
         self.port = port
         self.nickname = nickname
+        self.ui = ui
         self.socket: socket.socket = None
         self.groups: dict = {}
         self.actual_group: str = None
@@ -112,7 +114,7 @@ class ClientUi(tk.Tk):
 
 
     def start_network_connection(self, nickname: str):
-        self.network_client = ClientNetwork(nickname, host = "localhost", port = 5555)
+        self.network_client = ClientNetwork(nickname, self, host = "localhost", port = 5555)
 
         self.network_client.display_callback = self.display_messages
         self.network_client.connect()
