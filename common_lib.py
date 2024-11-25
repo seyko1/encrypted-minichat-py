@@ -3,18 +3,24 @@ import socket
 
 
 class ServerAction:
-    info = "information"
-    allowAccess = "give permission to access the given group" #this will allow to create private group later
-    joinGroup = "join the given group"
-    shareGroups = "give a list of existing groups"
+    info = "info"               #give data supposed to be shown in the chat
+    joinGroup = "joinGroup"     #allow the client to join a group
+    leaveGroup = "leaveGroup"
+    shareGroups = "shareGroups" #give the existing groups to the client
 # To perform an action, the server must send a message as the sender,
 # which the "content" must followed the format:
 # => "action:::content of the action"
 
 
+class ClientAction:
+    requestJoinGroup = "requestJoinGroup"
+    requestAddGroup = "requestAddGroup"
+    requestLeaveGroup = "requestLeaveGroup"
+
+
 class EntryForFormatedMessage:
-    sender = 'aleed'
-    target = 'stop'
+    sender = 'sender'
+    target = 'target'
     content = 'content'        #basic content, usually message between clients
     action = 'action'          #type of a request or an action
     groupsList = 'groupsList'  #a list a group

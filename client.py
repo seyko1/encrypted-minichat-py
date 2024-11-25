@@ -4,13 +4,15 @@ import tkinter as tk
 from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
+from typing import Optional
 
 
 class ClientNetwork:
-    def __init__(self, nickname: str, host = 'localhost', port = 5555):
+    def __init__(self, nickname: str, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
         self.host = host
         self.port = port
         self.nickname = nickname
+        self.ui = ui
         self.socket: socket.socket = None
         self.groups: dict = {}
         self.actual_group: str = None
@@ -45,6 +47,31 @@ class ClientNetwork:
         if self.socket:
             self.socket.close()
 
+
+    def joinGroup(self, groupName):
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.requestJoinGroup,
+            EntryForFormatedMessage.groupName: groupName
+        }
+        self.send_message(request)
+
+
+    def leaveGroup(self, groupName):
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.requestLeaveGroup,
+            EntryForFormatedMessage.groupName: groupName
+        }
+        self.send_message(request)
+
+
+    def addGroup(self, groupName):
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.requestAddGroup,
+            EntryForFormatedMessage.groupName: groupName
+        }
+        self.send_message(request)
+
+
     def send_message(self, entries: dict = {}, target = "server"):
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
@@ -75,23 +102,22 @@ class ClientNetwork:
                 content = message[EntryForFormatedMessage.content]
                 self.display_callback(content)
 
-            case ServerAction.allowAccess:
-                groupName = message[EntryForFormatedMessage.groupName]
-                self.groups[groupName]["have access"] = True
-
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
-                if not self.groups[groupName]["have access"]:
-                    print(f"You don't have acces to group [{groupName}]")
-                else:
-                    self.actual_group = groupName
-                    print(f"Join group [{groupName}]")
+                self.actual_group = groupName
+                print(f"Join group [{groupName}]")
+                self.ui.conversation_ui(groupName)
+            
+            case ServerAction.leaveGroup:
+                self.ui.groupChoice_ui()
 
             case ServerAction.shareGroups:
                 groups = message[EntryForFormatedMessage.groupsList]
                 groups = ast.literal_eval(groups)
                 for group in groups:
-                    self.groups[group] = {"have access": False}
+                    self.groups[group] = {}
+                if self.ui.current_ui == "groupChoice_ui":
+                    self.ui.groupChoice_ui()
 
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
@@ -101,35 +127,161 @@ class ClientNetwork:
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
 
-    def __init__(self, nickname: str): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
+    def __init__(self): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
         super().__init__()
 
         self.network_client: ClientNetwork = None
-        self.nickname = nickname #existe temporairement, permet d'obtenir le nom avant le création de l'objet UI
+        self.nickname = None
+        self.current_ui: str = "" #used to reload the groupe page when a new group comes
 
         self.connection_ui()
 
 
+    def try_to_connect(self, nickname: str):
+        if not nickname:
+            return
+        self.nickname = nickname
+        self.start_network_connection(nickname)
+        self.groupChoice_ui()
+    
+
+    def try_to_join_group(self, groupName: str):
+        print(f'Try to join "{groupName}"')
+        self.network_client.joinGroup(groupName)
+
+
+    def try_to_leave_group(self, groupName: str):
+        print(f'Try to leave "{groupName}"')
+        self.network_client.leaveGroup(groupName)
+
+
+    def try_create_group(self, groupName):
+        print(f'Try to create the groupe "{groupName}"')
+        self.network_client.addGroup(groupName)
+        self.groupChoice_ui()
+
+
     def start_network_connection(self, nickname: str):
-        self.network_client = ClientNetwork(nickname, host = "localhost", port = 5555)
+        self.network_client = ClientNetwork(nickname, self, host = "localhost", port = 5555)
 
         self.network_client.display_callback = self.display_messages
         self.network_client.connect()
 
 
+    def clear_ui(self):
+        for layout in self.winfo_children():
+            layout.destroy()
+
+
     # Création d'une interface recueillant le nom de l'utilisateur
-    # !! pour l'instant, il n'y a pas d'interface
     def connection_ui(self):
-        #self.nickname = input("Entrez votre nom: ")
-        # je voulais faire l'input ici, ce qui se ferait avec une interface,
-        # mais en passant par le terminale, c'est mieux de faire l'input avant l'initialisation de l'objet UI
-        # sinon, ça ouvre une interface vide, puis il faut rebasculer dans le terminal pour entrer le nom
-        self.init_ui()
-        self.start_network_connection(self.nickname) #oui c'est bizarre de donner un nom qu'on a déjà, mais plus tard, c'est ici, qu'il sera créé
+        self.clear_ui()
+        self.current_ui = "connection_ui"
+
+        self.title(f"{ClientUi.TITLE}")
+        self.geometry("1440x1024")
+        self.configure(bg="#E2D0F8")
+
+        canvas = tk.Canvas(
+            self,
+            bg="#E2D0F8",
+            height=1024,
+            width=1440,
+            bd=0,
+            highlightthickness=0,
+            relief="ridge"
+        )
+        canvas.place(x=0, y=0)
+
+        # Cadre entrée pseudo
+        self.nickname_entry_image = tk.PhotoImage(file="assets/frame0/nickname_entry.png")
+        nickname_entry_bg = canvas.create_image(
+            428.0,
+            512.5,
+            image=self.nickname_entry_image
+        )
+
+        # Entrée du pseudo
+        self.nickname_entry = tk.Entry(
+            self,
+            bd=0,
+            bg="#B5A8A8",
+            fg="#000716",
+            highlightthickness=0
+        )
+        self.nickname_entry.place(
+            x=63.0,
+            y=457.0,
+            width=730.0,
+            height=109.0
+        )
+
+        canvas.create_text(
+            62.0,
+            418.0,
+            anchor="nw",
+            text="Pseudo",
+            fill="#317874",
+            font=("Montserrat SemiBold", 32 * -1)
+        )
+
+        # Bouton login qui lance la génération des clés et switch à la main_page
+        self.entry_button_image = tk.PhotoImage(file="assets/frame0/entry_button.png")
+        button = tk.Button(
+            image=self.entry_button_image,
+            borderwidth=0,
+            highlightthickness=0,
+            command=lambda: self.try_to_connect(self.nickname_entry.get()),
+            relief="flat"
+        )
+        button.place(
+            x=164.0,
+            y=696.0,
+            width=528.0,
+            height=100.0
+        )
+
+        canvas.create_text(
+            248.0,
+            161.0,
+            anchor="nw",
+            text="Connexion",
+            fill="#317874",
+            font=("Montserrat SemiBold", 64 * -1)
+        )
+
+        # Rectangle bleu
+        canvas.create_rectangle(
+            878.0,
+            0.0,
+            1440.0,
+            1024.0,
+            fill="#317874",
+            outline=""
+        )
+
+        self.logo_image = tk.PhotoImage(file="assets/frame0/logo_chat.png")
+        image_1 = canvas.create_image(
+            1159.0,
+            512.0,
+            image=self.logo_image
+        )
+
+        canvas.create_text(
+            1024.0,
+            284.0,
+            anchor="nw",
+            text="RSCHAT",
+            fill="#FFFFFF",
+            font=("Montserrat SemiBold", 64 * -1)
+        )
 
 
-    def init_ui(self):
-        self.title(f"{ClientUi.TITLE} - {self.nickname}")
+    def conversation_ui(self, groupName: str):
+        self.clear_ui()
+        self.current_ui = "conversation_ui"
+
+        self.title(f"{self.nickname} in {groupName}")
         self.geometry('400x500')
         self.configure(bg='white')
         
@@ -148,6 +300,7 @@ class ClientUi(tk.Tk):
         self.txt = tk.StringVar()
         self.input_space: tk.Entry = tk.Entry(self.text_bar, textvariable=self.txt)
         self.send_button = tk.Button(self.text_bar, text = 'Send', command = lambda:self.send_message(self.txt.get()))
+        self.exit_button = tk.Button(self.text_bar, text = 'Leave', command = lambda: self.try_to_leave_group(groupName))
 
         # paramétrage du scrollbar
         chat_scroll = tk.Scrollbar(self.connect_interf, orient=tk.VERTICAL)
@@ -166,14 +319,64 @@ class ClientUi(tk.Tk):
         self.connect_interf.grid()
         
         # espace des messages
-        self.text_bar.grid(row=2, column=0, columnspan=4)
+        self.text_bar.grid(row=2, column=0, columnspan=5)
         
         # espace de l'input
-        self.chatbox.grid(row=1, column=0, columnspan=4)
-        self.input_space.grid(row=0, column=1)
-        self.send_button.grid(row=0, column=2)
+        self.chatbox.grid(row=1, column=0, columnspan=5)
+        self.exit_button.grid(row=0, column=1)
+        self.input_space.grid(row=0, column=2)
+        self.send_button.grid(row=0, column=3)
 
         self.display_messages("<connecté>")
+
+
+    def groupChoice_ui(self):
+        self.clear_ui()
+        self.current_ui = "groupChoice_ui"
+
+        self.title(f"{self.nickname} - Groupes")
+        self.geometry("600x500")
+        self.configure()
+
+        majorFrame = tk.Frame(self)
+        self.rootLayout = majorFrame
+        majorFrame.grid(sticky='nsew')
+
+        createGroup = tk.Button(majorFrame, text = '+', command=lambda: self.newGroup_ui())
+        createGroup.grid(row = 0)
+
+        groupButtonsFrame = tk.Frame(majorFrame)
+        groupButtonsFrame.grid(row=1)
+
+        #create as many buttons as groups
+        for i, groupName in enumerate(self.network_client.groups.keys()):
+            button = tk.Button(
+                groupButtonsFrame,
+                text = groupName,
+                command = lambda groupName = groupName: self.try_to_join_group(groupName))
+            button.grid(row = i)
+
+
+    def newGroup_ui(self):
+        self.clear_ui()
+        self.current_ui = "newGroup_ui"
+        #destroy the content of the previous window
+        if self.rootLayout:
+            self.rootLayout.destroy()
+
+        majorFrame = tk.Frame(self)
+        self.rootLayout = majorFrame
+        majorFrame.grid(sticky='nsew')
+
+        cancel = tk.Button(majorFrame, text="Annuler", command=lambda: self.groupChoice_ui())
+        cancel.grid(row=0)
+
+        entry = tk.Entry(majorFrame)
+        entry.grid(row=1)
+
+        add = tk.Button(majorFrame, text='Ajouter', command=lambda:self.try_create_group(entry.get()))
+        add.grid(row=2)
+
 
     def send_message(self, message):
         if (message):
@@ -200,8 +403,6 @@ class ClientUi(tk.Tk):
         self.input_space.delete(0, tk.END) # vide l'input
 
 
-nickname = input("Entrez votre nom: ") #est voué à disparaitre
-
-client_ui = ClientUi(nickname) #l'argument ne sera plus donné ici, lorsqu'une interface de connection existera
+client_ui = ClientUi()
 
 client_ui.mainloop()
