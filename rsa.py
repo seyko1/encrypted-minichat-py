@@ -1,8 +1,9 @@
 import math
-from typing import Tuple, TypeAlias
+import binascii
+from typing import TypeAlias
 from Cryptodome.Util.number import getPrime
 
-RsaKeypair: TypeAlias = Tuple[Tuple[int, int], Tuple[int, int]]
+RsaKeypair: TypeAlias = tuple[tuple[int, int], tuple[int, int]]
 
 # Prend en paramètre une taille de clé exprimée en bits, et renvoie une paire de clé publique/privée de cette taille
 def gen_rsa_keypair(bits: int) -> RsaKeypair:
@@ -53,3 +54,13 @@ def rsa_dec(c: int, exp: int, n: int) -> str:
 # Exponentiation modulaire à partir d'un message m, d'un exposant exp et du module de chiffrement n
 def rsa_exp(m: int, exp: int, n: int) -> int:
   return pow(m, exp, n)
+
+def rsa_key_to_hex(key: tuple[int, int]) -> tuple[str, str]:
+  return (
+    int_to_hexa(key[0]),
+    int_to_hexa(key[1])
+  )
+
+def int_to_hexa(value: int) -> str:
+    bytes = value.to_bytes((value.bit_length() + 7) // 8, 'big')
+    return binascii.hexlify(bytes).decode('utf-8')

@@ -4,10 +4,10 @@ from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
 from typing import Optional
 
-
 class Client ():
-    def __init__(self, nickname: str, socket: socket.socket):
+    def __init__(self, nickname: str, public_key: tuple[str, str], socket: socket.socket):
         self.nickname = nickname
+        self.public_key = public_key
         self.socket = socket
 
     @staticmethod
@@ -18,7 +18,6 @@ class Client ():
         
         # should not happen
         return None
-
 
 class server_socket ():
     def __init__(self, host: str = "", port: int = 5555):
@@ -63,23 +62,26 @@ class server_socket ():
 
     def receive(self):
         while True:
-            client, address = self.server.accept()
+            socket, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            msg = common_lib.receive_message(client)
-            nickname = msg[EntryForFormatedMessage.content]
-            client = Client(nickname, client)
+            msg = common_lib.receive_message(socket)
 
-            self.clients.append(client)
+            nickname = msg[EntryForFormatedMessage.sender]            
+            public_key = msg[EntryForFormatedMessage.public_key]
+
+            new_client = Client(nickname, public_key, socket)
+            self.clients.append(new_client)
+
             print(f"Well hello {nickname}\n")
 
             # SEND EXISTING GROUPS
             entries_groupsList = {
                 EntryForFormatedMessage.action: ServerAction.shareGroups,
                 EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
-            self.send_message(client.socket, entries_groupsList)
+            self.send_message(new_client.socket, entries_groupsList)
 
-            thread = threading.Thread(target=self.handle, args=(client,))
+            thread = threading.Thread(target=self.handle, args=(new_client,))
             thread.start()
 
 

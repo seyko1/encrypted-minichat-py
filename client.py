@@ -5,6 +5,7 @@ from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
+from rsa import gen_rsa_keypair, rsa_key_to_hex
 
 
 class ClientNetwork:
@@ -12,6 +13,7 @@ class ClientNetwork:
         self.host = host
         self.port = port
         self.nickname = nickname
+        self.rsa_keypair = None
         self.ui = ui
         self.socket: socket.socket = None
         self.groups: dict = {}
@@ -32,10 +34,11 @@ class ClientNetwork:
 
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.rsa_keypair = gen_rsa_keypair(512)
 
         try:
             self.socket.connect((self.host, self.port))
-            self.send_message({EntryForFormatedMessage.content: self.nickname})
+            self.sharePublicKey()
 
             # lancer le thread de reception des messages
             self.receive_thread = threading.Thread(target=self.receive_messages)
@@ -47,6 +50,15 @@ class ClientNetwork:
         if self.socket:
             self.socket.close()
 
+    def sharePublicKey(self):
+        public_key = self.rsa_keypair[0]
+        hexkey = rsa_key_to_hex(public_key)
+
+        request = {
+            EntryForFormatedMessage.action: common_lib.ClientAction.sharePublicKey,
+            EntryForFormatedMessage.public_key: hexkey
+        }
+        self.send_message(request)
 
     def joinGroup(self, groupName):
         request = {
