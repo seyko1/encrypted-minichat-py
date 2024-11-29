@@ -61,6 +61,11 @@ class server_socket ():
         self.clients: list[Client] = []
 
 
+    def show_clients(self):
+        for i, client in enumerate(self.clients, 1):
+            print(f'{i:>3} | {client}')
+
+
     # Envoie un message à tous les clients du groupe ciblé
     def broadcast(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
         for client in self.groups[target]:
