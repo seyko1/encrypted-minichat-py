@@ -60,6 +60,11 @@ class server_socket ():
         self.groups: dict[str | Client] = {"default": [], "L3B": [], "Les Monsieurs": [], "Les madames": []}
         self.clients: list[Client] = []
 
+        #add a temporary client, for testing
+        osef_client = Client(None)
+        osef_client.update_data(nickname="useless bro")
+        self.clients.append(osef_client)
+
 
     def show_clients(self):
         for i, client in enumerate(self.clients, 1):
