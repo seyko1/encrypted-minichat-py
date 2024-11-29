@@ -40,6 +40,15 @@ class Client ():
         return None
 
 
+    def update_data(self, nickname: str = None, public_key: tuple[str, str] = None, socket: socket.socket = None) -> None:
+        if nickname:
+            self.nickname = nickname
+        if public_key:
+            self.public_key = public_key
+        if socket:
+            self.socket = socket
+
+
 
 class server_socket ():
     def __init__(self, host: str = "", port: int = 5555):
