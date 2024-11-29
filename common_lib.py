@@ -2,6 +2,7 @@ import json
 import socket
 
 
+
 class ServerAction:
     info = "info"               #give data supposed to be shown in the chat
     joinGroup = "joinGroup"     #allow the client to join a group

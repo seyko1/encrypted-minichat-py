@@ -4,11 +4,14 @@ from common_lib import ServerAction, EntryForFormatedMessage
 import common_lib
 from typing import Optional
 
+
+
 class Client ():
     def __init__(self, nickname: str, public_key: tuple[str, str], socket: socket.socket):
         self.nickname = nickname
         self.public_key = public_key
         self.socket = socket
+
 
     @staticmethod
     def get_client(nickname: str, clientsList: list[Optional['Client']]) -> Optional['Client']:
@@ -19,6 +22,8 @@ class Client ():
         # should not happen
         return None
 
+
+
 class server_socket ():
     def __init__(self, host: str = "", port: int = 5555):
         self.host = host # localhost by default
@@ -28,6 +33,7 @@ class server_socket ():
 
         self.groups: dict[str | Client] = {"default": [], "L3B": [], "Les Monsieurs": [], "Les madames": []}
         self.clients: list[Client] = []
+
 
     # Envoie un message à tous les clients du groupe ciblé
     def broadcast(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
@@ -59,6 +65,7 @@ class server_socket ():
                     EntryForFormatedMessage.content: f"{client.nickname} has left group"}
                 self.broadcast(entries, target=target)
                 break
+
 
     def receive(self):
         while True:

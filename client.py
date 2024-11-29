@@ -8,6 +8,7 @@ from typing import Optional
 from rsa import gen_rsa_keypair, rsa_key_to_hex
 
 
+
 class ClientNetwork:
     def __init__(self, nickname: str, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
         self.host = host
@@ -22,15 +23,18 @@ class ClientNetwork:
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
 
+
     @property
     def display_callback(self):
         return self._display_callback
+
 
     @display_callback.setter
     def display_callback(self, callback):
         if not callable(callback):
             raise ValueError("display_callback doit être une fonction.")
         self._display_callback = callback
+
 
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,12 +47,15 @@ class ClientNetwork:
             # lancer le thread de reception des messages
             self.receive_thread = threading.Thread(target=self.receive_messages)
             self.receive_thread.start()
+
         except Exception:
             self.disconnect()
+
 
     def disconnect(self):
         if self.socket:
             self.socket.close()
+
 
     def sharePublicKey(self):
         public_key = self.rsa_keypair[0]
@@ -59,6 +66,7 @@ class ClientNetwork:
             EntryForFormatedMessage.public_key: hexkey
         }
         self.send_message(request)
+
 
     def joinGroup(self, groupName):
         request = {
@@ -87,6 +95,7 @@ class ClientNetwork:
     def send_message(self, entries: dict = {}, target = "server"):
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
+
     def receive_messages(self):
         while True:
             try:
@@ -100,6 +109,7 @@ class ClientNetwork:
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
                     self.display_callback(message[EntryForFormatedMessage.content], sender)
+
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
@@ -138,6 +148,7 @@ class ClientNetwork:
 
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
+
 
     def __init__(self): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
         super().__init__()
@@ -394,6 +405,7 @@ class ClientUi(tk.Tk):
         if (message):
             self.network_client.send_message({'content': message}, self.network_client.actual_group)
 
+
     def display_messages(self, message: str, sender = "server"):
         if not message:
             return
@@ -415,6 +427,6 @@ class ClientUi(tk.Tk):
         self.input_space.delete(0, tk.END) # vide l'input
 
 
-client_ui = ClientUi()
 
+client_ui = ClientUi()
 client_ui.mainloop()
