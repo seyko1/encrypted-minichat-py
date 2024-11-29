@@ -16,6 +16,14 @@ class Client ():
         self.socket = socket
 
 
+    def __str__(self) -> str:
+        id = self.id
+        n = self.nickname
+        key = self.public_key
+        sckt = 'Have one' if self.socket else None
+        return f'id:{id}, name:{n}, sckt:{sckt}, key:{key}'
+
+
     @staticmethod
     def generate_unique_id() -> str:
         Client.counter += 1
