@@ -13,6 +13,7 @@ class ServerAction:
 
 
 class ClientAction:
+    sharePublicKey = 'sharePublicKey'
     requestJoinGroup = "requestJoinGroup"
     requestAddGroup = "requestAddGroup"
     requestLeaveGroup = "requestLeaveGroup"
@@ -23,6 +24,7 @@ class EntryForFormatedMessage:
     target = 'target'
     content = 'content'        #basic content, usually message between clients
     action = 'action'          #type of a request or an action
+    public_key = 'public_key'
     groupsList = 'groupsList'  #a list a group
     groupName = 'groupName'    #name of a specific group
 
