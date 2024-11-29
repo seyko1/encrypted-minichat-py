@@ -122,6 +122,8 @@ class server_socket ():
             }
             self.send_message(new_client.socket, giveTempNickname)
 
+            self.show_clients()
+
 
     def handle_action_from_client(self, message: dict):
         action = message[EntryForFormatedMessage.action]
@@ -150,6 +152,7 @@ class server_socket ():
                         EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
                     }
                     self.send_message(client_connecting.socket, acceptConnection)
+                    self.show_clients()
                 
                 #refuseConnection
                 else:
@@ -252,6 +255,7 @@ class server_socket ():
         self.server.listen(10)
 
         print("The server is ready.")
+        self.show_clients()
         self.receive()
 
 
