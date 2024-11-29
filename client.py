@@ -1,7 +1,7 @@
 import socket
 import threading
 import tkinter as tk
-from common_lib import ServerAction, ClientAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, ErrorType
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
@@ -10,10 +10,10 @@ from rsa import gen_rsa_keypair, rsa_key_to_hex
 
 
 class ClientNetwork:
-    def __init__(self, nickname: str, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
+    def __init__(self, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
         self.host = host
         self.port = port
-        self.nickname = nickname
+        self.nickname = None
         self.rsa_keypair = None
         self.ui = ui
         self.socket: socket.socket = None
@@ -22,6 +22,8 @@ class ClientNetwork:
         self.receive_thread: threading.Thread = None  
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
+
+        self.preconnect()
 
 
     @property
@@ -36,13 +38,11 @@ class ClientNetwork:
         self._display_callback = callback
 
 
-    def connect(self):
+    def preconnect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.rsa_keypair = gen_rsa_keypair(512)
 
         try:
             self.socket.connect((self.host, self.port))
-            self.sharePublicKey()
 
             # lancer le thread de reception des messages
             self.receive_thread = threading.Thread(target=self.receive_messages)
@@ -50,6 +50,22 @@ class ClientNetwork:
 
         except Exception:
             self.disconnect()
+            print("Le server n'est pas ouvert.")
+            exit()
+
+
+    def connect(self, nickname: str):
+        self.rsa_keypair = gen_rsa_keypair(512)
+
+        public_key = self.rsa_keypair[0]
+        hexkey = rsa_key_to_hex(public_key)
+
+        requestConnection = {
+            EntryForFormatedMessage.action: ClientAction.requestConnection,
+            EntryForFormatedMessage.nickname: nickname,
+            EntryForFormatedMessage.public_key: hexkey
+        }
+        self.send_message(requestConnection)
 
 
     def disconnect(self):
@@ -124,6 +140,28 @@ class ClientNetwork:
                 content = message[EntryForFormatedMessage.content]
                 self.display_callback(content)
 
+            case ServerAction.error:
+                self.handle_error(message)
+            
+            case ServerAction.acceptConnection:
+                #get confirmed nickName
+                new_name = message[EntryForFormatedMessage.nickname]
+                self.nickname = new_name
+                self.ui.nickname = new_name
+
+                #get groups
+                groups = message[EntryForFormatedMessage.groupsList]
+                groups = ast.literal_eval(groups)
+                for group in groups:
+                    self.groups[group] = {}
+
+                #switch interface
+                self.ui.groupChoice_ui()
+
+            case ServerAction.giveTempNickname:
+                tempNickname = message[EntryForFormatedMessage.nickname]
+                self.nickname = tempNickname
+
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
                 self.actual_group = groupName
@@ -145,6 +183,13 @@ class ClientNetwork:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
 
+    def handle_error(self, message: dict):
+            errorType = message[EntryForFormatedMessage.errorType]
+            match errorType:
+                case ErrorType.nicknameTaken:
+                    print("Nom déjà utilisé")
+                    #must be shown to the user, on the Connection interface
+
 
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
@@ -157,6 +202,7 @@ class ClientUi(tk.Tk):
         self.nickname = None
         self.current_ui: str = "" #used to reload the groupe page when a new group comes
 
+        self.start_network_connection()
         self.connection_ui()
 
 
@@ -164,8 +210,7 @@ class ClientUi(tk.Tk):
         if not nickname:
             return
         self.nickname = nickname
-        self.start_network_connection(nickname)
-        self.groupChoice_ui()
+        self.network_client.connect(nickname)
     
 
     def try_to_join_group(self, groupName: str):
@@ -184,11 +229,10 @@ class ClientUi(tk.Tk):
         self.groupChoice_ui()
 
 
-    def start_network_connection(self, nickname: str):
-        self.network_client = ClientNetwork(nickname, self, host = "localhost", port = 5555)
+    def start_network_connection(self):
+        self.network_client = ClientNetwork(self)
 
         self.network_client.display_callback = self.display_messages
-        self.network_client.connect()
 
 
     def clear_ui(self):
