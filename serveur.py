@@ -7,10 +7,19 @@ from typing import Optional
 
 
 class Client ():
+    counter = 0
+
     def __init__(self, nickname: str, public_key: tuple[str, str], socket: socket.socket):
+        self.id = Client.generate_unique_id()
         self.nickname = nickname
         self.public_key = public_key
         self.socket = socket
+
+
+    @staticmethod
+    def generate_unique_id() -> str:
+        Client.counter += 1
+        return f'__{Client.counter}'
 
 
     @staticmethod
