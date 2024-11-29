@@ -86,16 +86,30 @@ class ThemedFrame(Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        self.button_images = {}  # Stocke les images des boutons pour chaque thème
         self.update_theme()
 
     def update_theme(self):
         colors = self.controller.colors[self.controller.theme]
         self.configure(bg=colors["bg"])
         for widget in self.winfo_children():
-            if isinstance(widget, (Label, Button, Entry)):
+            if isinstance(widget, (Label, Entry)):
                 widget.configure(bg=colors["bg"], fg=colors["fg"])
+            elif isinstance(widget, Button):
+                widget.configure(bg=colors["bg"], fg=colors["fg"])
+                # Mise à jour de l'image si le bouton est enregistré avec un thème
+                if hasattr(widget, "image_key") and widget.image_key in self.button_images:
+                    widget.configure(image=self.button_images[widget.image_key][self.controller.theme])
             elif isinstance(widget, Canvas):
                 widget.configure(bg=colors["canvas"])
+
+    def add_button_image(self, button, image_key, light_image_path, dark_image_path):
+        """Ajoute une image associée à un bouton pour chaque thème."""
+        light_image = PhotoImage(file=light_image_path) if os.path.exists(light_image_path) else None
+        dark_image = PhotoImage(file=dark_image_path) if os.path.exists(dark_image_path) else None
+        self.button_images[image_key] = {"light": light_image, "dark": dark_image}
+        button.image_key = image_key  # Attribut pour suivre le bouton
+        button.configure(image=self.button_images[image_key][self.controller.theme])
 
 
 class LoginPage(ThemedFrame):
@@ -107,23 +121,20 @@ class LoginPage(ThemedFrame):
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
 
-        Label(self, text="Connexion", font=("Montserrat", 32, "bold"), bg="#E2D0F8", fg ="#317874").grid(column=0, row=1)
-        Label(self, text="Pseudo", font=("Montserrat", 16, "bold"), bg="#E2D0F8", fg ="#317874").grid(column=0, row=3, sticky="w", padx=100)
-        self.nickname_entry_image = PhotoImage(file="assets/frame0/nickname_entry.png")
-        Label(self,image=self.nickname_entry_image).grid(column=0, row=4)
-        user_entry = Entry(self,bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
+        Label(self, text="Connexion", font=("Montserrat", 32, "bold"), bg="#E2D0F8", fg="#317874").grid(column=0, row=1)
+        Label(self, text="Pseudo", font=("Montserrat", 16, "bold"), bg="#E2D0F8", fg="#317874").grid(column=0, row=3, sticky="w", padx=100)
+        user_entry = Entry(self, bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
         user_entry.grid(column=0, row=4, sticky="nsew", padx=110, pady=50)
 
-        button_image_path = "assets/frame0/entry_button.png"
-        self.button_entry_image = PhotoImage(file=button_image_path) if os.path.exists(button_image_path) else None
-        Button(
-            self, image=self.button_entry_image, relief="flat", highlightthickness=0, bd=0,
-            command=lambda: [print(f"{user_entry.get()}"), controller.show_frame(LandingPage)]
-        ).grid(column=0, row=7)
-
-        canvas = Canvas(self, width=400, height=1024, bg="#317874", highlightthickness=0)
-        canvas.grid(column=1, row=0, rowspan=10, sticky="nswe")
-        Label(self, text="RSCHAT", font=("Montserrat", 32, "bold"), fg="#E2D0F8", bg="#317874").grid(column=1, row=3)
+        # Ajout d'une image dynamique pour le bouton
+        entry_button = Button(self, relief="flat", bd=0, command=lambda: controller.show_frame(LandingPage))
+        self.add_button_image(
+            entry_button,
+            image_key="entry",
+            light_image_path="assets/frame1/entry_button_clair.png",
+            dark_image_path="assets/frame1/entry_button_sombre.png"
+        )
+        entry_button.grid(column=0, row=7)
 
 
 class LandingPage(ThemedFrame):
@@ -136,28 +147,50 @@ class LandingPage(ThemedFrame):
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
 
-        # Boutons d'action
-        self.theme_switch_clair_image = PhotoImage(file="assets/frame1/theme_switch_clair.png")
-        self.group_create_clair_image = PhotoImage(file="assets/frame1/group_create_clair.png")
-        Button(self, image=self.theme_switch_clair_image, command=controller.toggle_theme, relief="flat", bd=0).grid(column=0, row=1)
-        Button(self, image=self.group_create_clair_image, 
-               command=lambda: controller.show_frame(TextingPage), relief="flat", bd=0).grid(column=0, row=2)
+        # Bouton pour changer le thème
+        theme_button = Button(self, relief="flat", bd=0, command=controller.toggle_theme)
+        self.add_button_image(
+            theme_button,
+            image_key="theme_switch",
+            light_image_path="assets/frame1/theme_switch_clair.png",
+            dark_image_path="assets/frame1/theme_switch_sombre.png"
+        )
+        theme_button.grid(column=0, row=1)
+
+        # Bouton pour créer un groupe
+        group_button = Button(self, relief="flat", bd=0, command=lambda: controller.show_frame(TextingPage))
+        self.add_button_image(
+            group_button,
+            image_key="group_create",
+            light_image_path="assets/frame1/group_create_clair.png",
+            dark_image_path="assets/frame1/group_create_sombre.png"
+        )
+        group_button.grid(column=0, row=2)
 
         # Rectangle bleu/alternatif
         canvas1 = Canvas(self, bg="#317874", highlightthickness=0)
         canvas1.grid(column=1, row=0, rowspan=10, sticky="nsew")
 
-        # Toggle button groups
-        self.toggle_button_groups_clair_image = PhotoImage(file="assets/frame1/groups_button_clair.png")
-        toggle_button_groups = Button(self, image=self.toggle_button_groups_clair_image,bd = 0, relief="flat",
-                                      command=lambda: print("On switch vers la page de people"))
-        toggle_button_groups.grid(column=1, row=0)
+        # Bouton groups_button (basculer sur la page de groupes)
+        groups_button = Button(self, relief="flat", bd=0, command=lambda: print("Affiche les groupes"))
+        self.add_button_image(
+            groups_button,
+            image_key="groups_button",
+            light_image_path="assets/frame1/groups_button_clair.png",
+            dark_image_path="assets/frame1/groups_button_sombre.png"
+        )
+        groups_button.grid(column=1, row=1)
 
-        # Affichage des groupes en ligne
-        self.groupchat_button_image = PhotoImage(file="assets/frame1/groupchat_button_clair.png")
-        groupchat_button = Button(self, image=self.groupchat_button_image, relief="flat", 
-                                  command=lambda: print("On entre dans ce groupe"))
-        groupchat_button.grid(column=1, row=1)
+        # Bouton peoplechat_button (basculer sur la page des discussions privées)
+        peoplechat_button = Button(self, relief="flat", bd=0, command=lambda: print("Affiche les discussions privées"))
+        self.add_button_image(
+            peoplechat_button,
+            image_key="peoplechat_button",
+            light_image_path="assets/frame1/peoplechat_button_clair.png",
+            dark_image_path="assets/frame1/peoplechat_button_sombre.png"
+        )
+        peoplechat_button.grid(column=1, row=2)
+
 
 class TextingPage(ThemedFrame):
     def __init__(self, parent, controller):
