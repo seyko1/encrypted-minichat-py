@@ -1,7 +1,7 @@
 import socket
 import threading
 import tkinter as tk
-from common_lib import ServerAction, ClientAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, ErrorType
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional

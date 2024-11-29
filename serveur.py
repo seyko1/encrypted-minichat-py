@@ -1,6 +1,6 @@
 import socket
 import threading
-from common_lib import ServerAction, ClientAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, ErrorType
 import common_lib
 from typing import Optional
 
