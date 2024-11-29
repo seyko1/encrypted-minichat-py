@@ -128,16 +128,31 @@ class server_socket ():
                 nickname = message[EntryForFormatedMessage.nickname]
                 client_connecting = Client.get_client(sender, self.clients)
 
+                #search for client with the same nickname
+                firstConnection = True
+                for client in self.clients:
+                    if nickname == client.nickname:
+                        firstConnection = False
+                
                 #valideConnection
-                client_connecting.update_data(nickname, public_key)
+                if firstConnection:
+                    client_connecting.update_data(nickname, public_key)
 
-                #confirme connection, and share groups list
-                acceptConnection = {
-                    EntryForFormatedMessage.action: ServerAction.acceptConnection,
-                    EntryForFormatedMessage.nickname: nickname,
-                    EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
-                }
-                self.send_message(client_connecting.socket, acceptConnection)
+                    #confirme connection, and share groups list
+                    acceptConnection = {
+                        EntryForFormatedMessage.action: ServerAction.acceptConnection,
+                        EntryForFormatedMessage.nickname: nickname,
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
+                    }
+                    self.send_message(client_connecting.socket, acceptConnection)
+                
+                #refuseConnection
+                else:
+                    refuseConnection = {
+                        EntryForFormatedMessage.action: ServerAction.error,
+                        EntryForFormatedMessage.errorType: ErrorType.nicknameTaken
+                    }
+                    self.send_message(client_connecting.socket, refuseConnection)
 
             case ClientAction.requestJoinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]

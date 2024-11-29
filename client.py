@@ -140,6 +140,13 @@ class ClientNetwork:
                 content = message[EntryForFormatedMessage.content]
                 self.display_callback(content)
 
+            case ServerAction.error:
+                errorType = message[EntryForFormatedMessage.errorType]
+                match errorType:
+                    case ErrorType.nicknameTaken:
+                        print("Nom déjà utilisé")
+                        #must be shown to the user, on the Connection interface
+            
             case ServerAction.acceptConnection:
                 #get confirmed nickName
                 new_name = message[EntryForFormatedMessage.nickname]
