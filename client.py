@@ -1,7 +1,7 @@
 import socket
 import threading
 import tkinter as tk
-from common_lib import ServerAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
@@ -62,7 +62,7 @@ class ClientNetwork:
         hexkey = rsa_key_to_hex(public_key)
 
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.sharePublicKey,
+            EntryForFormatedMessage.action: ClientAction.sharePublicKey,
             EntryForFormatedMessage.public_key: hexkey
         }
         self.send_message(request)
@@ -70,7 +70,7 @@ class ClientNetwork:
 
     def joinGroup(self, groupName):
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.requestJoinGroup,
+            EntryForFormatedMessage.action: ClientAction.requestJoinGroup,
             EntryForFormatedMessage.groupName: groupName
         }
         self.send_message(request)
@@ -78,7 +78,7 @@ class ClientNetwork:
 
     def leaveGroup(self, groupName):
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.requestLeaveGroup,
+            EntryForFormatedMessage.action: ClientAction.requestLeaveGroup,
             EntryForFormatedMessage.groupName: groupName
         }
         self.send_message(request)
@@ -86,7 +86,7 @@ class ClientNetwork:
 
     def addGroup(self, groupName):
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.requestAddGroup,
+            EntryForFormatedMessage.action: ClientAction.requestAddGroup,
             EntryForFormatedMessage.groupName: groupName
         }
         self.send_message(request)

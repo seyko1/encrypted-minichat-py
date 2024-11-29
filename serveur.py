@@ -1,6 +1,6 @@
 import socket
 import threading
-from common_lib import ServerAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage
 import common_lib
 from typing import Optional
 
@@ -93,11 +93,11 @@ class server_socket ():
 
 
     def handle_action_from_client(self, message: dict):
-        action = message[common_lib.EntryForFormatedMessage.action]
+        action = message[EntryForFormatedMessage.action]
 
         match action:
-            case common_lib.ClientAction.requestJoinGroup:
-                groupName = message[common_lib.EntryForFormatedMessage.groupName]
+            case ClientAction.requestJoinGroup:
+                groupName = message[EntryForFormatedMessage.groupName]
 
                 ## TODO
                 ##
@@ -106,7 +106,7 @@ class server_socket ():
 
                 ## Here's the protocole without the key.
                 ## Must be changed.
-                senderName = message[common_lib.EntryForFormatedMessage.sender]
+                senderName = message[EntryForFormatedMessage.sender]
                 groupMembers: list[Client] = self.groups[groupName]
 
                 # determine if the client is already a member
@@ -128,20 +128,20 @@ class server_socket ():
 
                 #broadcast that client has join
                 joinMessage = {
-                    common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.info,
-                    common_lib.EntryForFormatedMessage.content: msg
+                    EntryForFormatedMessage.action: ServerAction.info,
+                    EntryForFormatedMessage.content: msg
                     }
                 self.broadcast(joinMessage, target = groupName, ignore=client.socket)
 
                 #make the client join the group
                 makeJoin = {
-                    common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.joinGroup,
-                    common_lib.EntryForFormatedMessage.groupName: groupName}
+                    EntryForFormatedMessage.action: ServerAction.joinGroup,
+                    EntryForFormatedMessage.groupName: groupName}
                 self.send_message(client.socket, makeJoin)
 
                 ## Must be changed.
 
-            case common_lib.ClientAction.requestAddGroup:
+            case ClientAction.requestAddGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
 
                 # check if it exist
@@ -160,9 +160,9 @@ class server_socket ():
                 for client in self.clients:
                     self.send_message(client.socket, groupsListUpdate)
 
-            case common_lib.ClientAction.requestLeaveGroup:
+            case ClientAction.requestLeaveGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
-                senderName = message[common_lib.EntryForFormatedMessage.sender]
+                senderName = message[EntryForFormatedMessage.sender]
                 client = Client.get_client(senderName, self.clients)
 
                 #remove client
