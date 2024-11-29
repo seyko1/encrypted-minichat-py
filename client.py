@@ -141,11 +141,7 @@ class ClientNetwork:
                 self.display_callback(content)
 
             case ServerAction.error:
-                errorType = message[EntryForFormatedMessage.errorType]
-                match errorType:
-                    case ErrorType.nicknameTaken:
-                        print("Nom déjà utilisé")
-                        #must be shown to the user, on the Connection interface
+                self.handle_error(message)
             
             case ServerAction.acceptConnection:
                 #get confirmed nickName
@@ -186,6 +182,13 @@ class ClientNetwork:
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
+
+    def handle_error(self, message: dict):
+            errorType = message[EntryForFormatedMessage.errorType]
+            match errorType:
+                case ErrorType.nicknameTaken:
+                    print("Nom déjà utilisé")
+                    #must be shown to the user, on the Connection interface
 
 
 class ClientUi(tk.Tk):
