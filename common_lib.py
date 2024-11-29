@@ -4,7 +4,9 @@ import socket
 
 
 class ServerAction:
+    acceptConnection = "acceptConnection"
     info = "info"               #give data supposed to be shown in the chat
+    giveTempNickname = "giveTempNickname"
     joinGroup = "joinGroup"     #allow the client to join a group
     leaveGroup = "leaveGroup"
     shareGroups = "shareGroups" #give the existing groups to the client
@@ -14,6 +16,7 @@ class ServerAction:
 
 
 class ClientAction:
+    requestConnection = 'requestConnection'
     sharePublicKey = 'sharePublicKey'
     requestJoinGroup = "requestJoinGroup"
     requestAddGroup = "requestAddGroup"
@@ -25,6 +28,7 @@ class EntryForFormatedMessage:
     target = 'target'
     content = 'content'        #basic content, usually message between clients
     action = 'action'          #type of a request or an action
+    nickname = 'nickname'
     public_key = 'public_key'
     groupsList = 'groupsList'  #a list a group
     groupName = 'groupName'    #name of a specific group

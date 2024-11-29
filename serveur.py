@@ -9,12 +9,12 @@ from typing import Optional
 class Client ():
     counter = 0
 
-    def __init__(self, nickname: str, public_key: tuple[str, str], socket: socket.socket):
+    def __init__(self, socket: socket.socket):
         self.id = Client.generate_unique_id()
-        self.nickname = nickname
-        self.public_key = public_key
+        self.nickname:str = self.id
+        self.public_key: tuple[str, str] = None
         self.socket = socket
-
+    
 
     def __str__(self) -> str:
         id = self.id
@@ -103,30 +103,42 @@ class server_socket ():
             socket, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            msg = common_lib.receive_message(socket)
-
-            nickname = msg[EntryForFormatedMessage.sender]            
-            public_key = msg[EntryForFormatedMessage.public_key]
-
-            new_client = Client(nickname, public_key, socket)
+            new_client = Client(socket)
             self.clients.append(new_client)
-
-            print(f"Well hello {nickname}\n")
-
-            # SEND EXISTING GROUPS
-            entries_groupsList = {
-                EntryForFormatedMessage.action: ServerAction.shareGroups,
-                EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
-            self.send_message(new_client.socket, entries_groupsList)
 
             thread = threading.Thread(target=self.handle, args=(new_client,))
             thread.start()
+
+            #send a temporary nickname
+            tempNickname = new_client.id
+            giveTempNickname = {
+                EntryForFormatedMessage.action: ServerAction.giveTempNickname,
+                EntryForFormatedMessage.nickname: tempNickname
+            }
+            self.send_message(new_client.socket, giveTempNickname)
 
 
     def handle_action_from_client(self, message: dict):
         action = message[EntryForFormatedMessage.action]
 
         match action:
+            case ClientAction.requestConnection:
+                sender = message[EntryForFormatedMessage.sender]
+                public_key = message[EntryForFormatedMessage.public_key]
+                nickname = message[EntryForFormatedMessage.nickname]
+                client_connecting = Client.get_client(sender, self.clients)
+
+                #valideConnection
+                client_connecting.update_data(nickname, public_key)
+
+                #confirme connection, and share groups list
+                acceptConnection = {
+                    EntryForFormatedMessage.action: ServerAction.acceptConnection,
+                    EntryForFormatedMessage.nickname: nickname,
+                    EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
+                }
+                self.send_message(client_connecting.socket, acceptConnection)
+
             case ClientAction.requestJoinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
 
