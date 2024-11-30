@@ -37,6 +37,7 @@ class EntryForFormatedMessage:
 
 class ErrorType:
     nicknameTaken = "nicknameTaken"
+    groupNameTaken = "groupNameTaken"
     emptyGroup = "emptyGroup"
 
 
