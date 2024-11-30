@@ -57,7 +57,7 @@ class server_socket ():
 
         self.server: socket.socket = None
 
-        self.groups: dict[str | Client] = {"default": [], "L3B": [], "Les Monsieurs": [], "Les madames": []}
+        self.groups: dict[str | Client] = {"L3B": []}
         self.clients: list[Client] = []
 
         #add a temporary client, for testing
@@ -163,49 +163,10 @@ class server_socket ():
                     self.send_message(client_connecting.socket, refuseConnection)
 
             case ClientAction.requestJoinGroup:
-                groupName = message[EntryForFormatedMessage.groupName]
-
-                ## TODO
-                ##
-                ## must add the protocole to give the key of the group here
-                ##
-
-                ## Here's the protocole without the key.
-                ## Must be changed.
-                senderName = message[EntryForFormatedMessage.sender]
-                groupMembers: list[Client] = self.groups[groupName]
-
-                # determine if the client is already a member
-                isInGroup = False
-                for client in groupMembers:
-                    nickname = client.nickname
-                    if nickname == senderName:
-                        isInGroup = True
-                        break
+                group_name = message[EntryForFormatedMessage.groupName]
+                requester_name = message[EntryForFormatedMessage.sender]
                 
-                client = Client.get_client(senderName, self.clients)
-                #prepare the message to the group
-                msg = ''
-                if isInGroup:
-                    msg = f'{senderName} has rejoin'
-                else:
-                    self.groups[groupName].append(client)
-                    msg = f'{senderName} has join'
-
-                #broadcast that client has join
-                joinMessage = {
-                    EntryForFormatedMessage.action: ServerAction.info,
-                    EntryForFormatedMessage.content: msg
-                    }
-                self.broadcast(joinMessage, target = groupName, ignore=client.socket)
-
-                #make the client join the group
-                makeJoin = {
-                    EntryForFormatedMessage.action: ServerAction.joinGroup,
-                    EntryForFormatedMessage.groupName: groupName}
-                self.send_message(client.socket, makeJoin)
-
-                ## Must be changed.
+                self.join_group(requester_name, group_name)
 
             case ClientAction.requestAddGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
@@ -262,6 +223,43 @@ class server_socket ():
     def send_message(self, client: socket.socket, entries: dict, sender = "server", target = ""):
         common_lib.send_message(client, sender, target, entries)
 
+    
+    def join_group(self, requester_name: str, group_name: str):
+        client = Client.get_client(requester_name, self.clients)
+        members: list[Client] = self.groups[group_name]
+
+        # return an error if a participant requests to join an empty group
+        if not members:
+            empty_group = {             
+                EntryForFormatedMessage.action: ServerAction.error,
+                EntryForFormatedMessage.errorType: ErrorType.emptyGroup
+            }
+            self.send_message(client.socket, empty_group)
+            return
+            
+        # determine if the client is already a member
+        in_group = any(member.nickname == requester_name for member in members)
+
+        # repare the message to the group
+        msg = ''
+        if in_group:
+            msg = f'{requester_name} has rejoin'
+        else:
+            self.groups[group_name].append(client)
+            msg = f'{requester_name} has join'
+
+        # broadcast that client has join
+        joinMessage = {
+            EntryForFormatedMessage.action: ServerAction.info,
+            EntryForFormatedMessage.content: msg
+            }
+        self.broadcast(joinMessage, target = group_name, ignore=client.socket)
+
+        # make the client join the group
+        make_join = {
+            EntryForFormatedMessage.action: ServerAction.joinGroup,
+            EntryForFormatedMessage.groupName: group_name}
+        self.send_message(client.socket, make_join)
 
 
 server = server_socket()
