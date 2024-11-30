@@ -67,7 +67,7 @@ class ClientUi(Tk):
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(LandingPage)
+        self.show_frame(LoginPage)
 
     def show_frame(self, page):
         """Affiche la page demandée."""
@@ -116,25 +116,48 @@ class LoginPage(ThemedFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
-        self.grid_columnconfigure(0, weight=3)
-        self.grid_columnconfigure(1, weight=1)
+        # Configuration de la grille
+        self.grid_columnconfigure(0, weight=1)  # Colonne principale centrée
+        self.grid_columnconfigure(1, weight=1)  # Colonne secondaire (droite)
         for i in range(10):
-            self.grid_rowconfigure(i, weight=1)
+            self.grid_rowconfigure(i, weight=1)  # Équilibrer les lignes
 
-        Label(self, text="Connexion", font=("Montserrat", 32, "bold"), bg="#E2D0F8", fg="#317874").grid(column=0, row=1)
-        Label(self, text="Pseudo", font=("Montserrat", 16, "bold"), bg="#E2D0F8", fg="#317874").grid(column=0, row=3, sticky="w", padx=100)
-        user_entry = Entry(self, bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
-        user_entry.grid(column=0, row=4, sticky="nsew", padx=110, pady=50)
+        # Titre de la page avec couleur personnalisée
+        Label(self, text="CONNEXION", font=("Montserrat", 32, "bold"), fg="#317874").grid(column=0, row=1, pady=10)
 
-        # Ajout d'une image dynamique pour le bouton
-        entry_button = Button(self, relief="flat", bd=0, command=lambda: controller.show_frame(LandingPage))
-        self.add_button_image(
-            entry_button,
-            image_key="entry",
-            light_image_path="assets/frame1/entry_button_clair.png",
-            dark_image_path="assets/frame1/entry_button_sombre.png"
+        # Label pour le pseudo avec couleur personnalisée
+        Label(self, text="Pseudo", font=("Montserrat", 16, "bold"), fg="#317874").grid(column=0, row=3, sticky="w", padx=150, pady=(5, 0))
+
+        # Case pour entrer le pseudo avec épaisseur augmentée
+        user_entry = Entry(
+            self, 
+            bd=4,  # Augmentation de l'épaisseur de la bordure
+            highlightthickness=4,  # Augmentation de l'épaisseur du contour en surbrillance
+            highlightbackground="#cccccc",  # Couleur de la bordure au repos
+            highlightcolor="#317874",  # Couleur de la bordure active
+            font=("Montserrat", 14)
         )
-        entry_button.grid(column=0, row=7)
+        user_entry.grid(column=0, row=4, padx=150, pady=(2, 10), sticky="w")
+        user_entry.config(width=25)  # Ajuste la largeur pour qu'elle soit équilibrée
+
+        # Bouton pour valider
+        button_image_path = "assets/frame0/entry_button.png"
+        self.button_entry_image = PhotoImage(file=button_image_path) if os.path.exists(button_image_path) else None
+        Button(
+            self, image=self.button_entry_image, relief="flat",
+            command=lambda: [print(f"{user_entry.get()}"), controller.show_frame(LandingPage)]
+        ).grid(column=0, row=6, pady=20)
+
+        # Titre "RSCHAT" sur la droite
+        canvas = Canvas(self, width=400, height=1024, bg="#317874", highlightthickness=0)
+        canvas.grid(column=1, row=0, rowspan=10, sticky="nswe")
+        Label(self, text="RSCHAT", font=("Montserrat", 32, "bold"), fg="#E2D0F8", bg="#317874").grid(column=1, row=3)
+
+        # Image en dessous du titre (réduction de la taille)
+        logo_image_path = "assets/frame0/logo_chat.png"
+        if os.path.exists(logo_image_path):
+            self.logo_image = PhotoImage(file=logo_image_path).subsample(2, 2)  # Divise la taille par 2
+            Label(self, image=self.logo_image, bg="#317874").grid(column=1, row=4)
 
 
 class LandingPage(ThemedFrame):
