@@ -54,7 +54,7 @@ class ClientNetwork:
             exit()
 
 
-    def connect(self, nickname: str):
+    def log_in(self, nickname: str):
         self.rsa_keypair = gen_rsa_keypair(512)
 
         public_key = self.rsa_keypair[0]
@@ -206,11 +206,11 @@ class ClientUi(tk.Tk):
         self.connection_ui()
 
 
-    def try_to_connect(self, nickname: str):
+    def try_to_log_in(self, nickname: str):
         if not nickname:
             return
         self.nickname = nickname
-        self.network_client.connect(nickname)
+        self.network_client.log_in(nickname)
     
 
     def try_to_join_group(self, groupName: str):
@@ -298,7 +298,7 @@ class ClientUi(tk.Tk):
             image=self.entry_button_image,
             borderwidth=0,
             highlightthickness=0,
-            command=lambda: self.try_to_connect(self.nickname_entry.get()),
+            command=lambda: self.try_to_log_in(self.nickname_entry.get()),
             relief="flat"
         )
         button.place(
