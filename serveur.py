@@ -59,6 +59,8 @@ class server_socket ():
 
         self.groups: dict[str | Client] = {"L3B": []}
         self.clients: list[Client] = []
+        # dictionnaire pour garder les callbacks par groupe
+        self.group_key_response_callbacks = {}
 
         #add a temporary client, for testing
         osef_client = Client(None)
@@ -131,7 +133,7 @@ class server_socket ():
         match action:
             case ClientAction.requestConnection:
                 sender = message[EntryForFormatedMessage.sender]
-                public_key = message[EntryForFormatedMessage.public_key]
+                public_key = message[EntryForFormatedMessage.publicKey]
                 nickname = message[EntryForFormatedMessage.nickname]
                 client_connecting = Client.get_client(sender, self.clients)
 
@@ -202,6 +204,25 @@ class server_socket ():
                     EntryForFormatedMessage.content: f'{senderName} has leave'}
                 self.broadcast(clientHasLeave, target=groupName)
 
+            case ClientAction.shareGroupKey:
+                group_name = message[EntryForFormatedMessage.groupName]                
+                nickname, groupKey = message[EntryForFormatedMessage.groupKey]
+
+                # retrouver le client pour qui la clé est destinée
+                target_client = Client.get_client(nickname, self.clients)
+                
+                # envoyer un message d'erreur si la réponse n'est pas une shareGroupKey action
+                if not message[EntryForFormatedMessage.action] == ClientAction.shareGroupKey:
+                    self.send_message(client.socket, {
+                        EntryForFormatedMessage.action: ServerAction.error,
+                        EntryForFormatedMessage.errorType: ErrorType.adminDeniedKey
+                    })
+
+                # faire appel à la fonction de callback correspondant au groupe dans le dictionnaire key_response_callbacks
+                # lors d'une prochaine demande pour rejoindre le groupe [group_name] : un nouveau callback écrasera l'ancien dans le dictionnaire
+                callback = self.group_key_response_callbacks[group_name]
+                callback(groupKey, target_client)
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 
@@ -241,43 +262,73 @@ class server_socket ():
         for client in self.clients:
             self.send_message(client.socket, share_groups)
     
-    
+    # enregistrer une fonction de rappel lors d'une demande de clé de groupe
+    def register_callback_for_groupkey_response(self, group_name: str, callback: callable):
+        # enregistrer le callback pour un groupe donné
+        self.group_key_response_callbacks[group_name] = callback
+
+    # transmets la clé de groupe envoyé par l'admin vers le client à l'origine de la demande
+    def handle_key_from_admin(self, group_key: str, client: Client, group_name: str):
+        print(f'callback de partage de clé pour le groupe {group_name} !')
+        print(f'clé de groupe reçue : {group_key}')
+        print(f'client à l\'origine de la demande : {client.nickname}')
+
+        # ajouter le client à l'origine de la demande parmi les membres du groupe
+        self.groups[group_name].append(client)
+
+        # broadcast that client has join
+        broadcast_msg = {
+            EntryForFormatedMessage.action: ServerAction.info,
+            EntryForFormatedMessage.content: f'{client.nickname} has join'
+        }
+        self.broadcast(broadcast_msg, target = group_name, ignore=client.socket)
+
+        # make the client join the group with group key
+        make_join_msg = {
+            EntryForFormatedMessage.action: ServerAction.joinGroup,
+            EntryForFormatedMessage.groupName: group_name,
+            EntryForFormatedMessage.groupKey: group_key
+        }
+        self.send_message(client.socket, make_join_msg)
+
+
     def join_group(self, requester_name: str, group_name: str):
         client = Client.get_client(requester_name, self.clients)
         members: list[Client] = self.groups[group_name]
 
         # return an error if a participant requests to join an empty group
         if not members:
-            empty_group = {             
+            self.send_message(client.socket, {             
                 EntryForFormatedMessage.action: ServerAction.error,
                 EntryForFormatedMessage.errorType: ErrorType.emptyGroup
-            }
-            self.send_message(client.socket, empty_group)
+            })
             return
             
         # determine if the client is already a member
         in_group = any(member.nickname == requester_name for member in members)
 
-        # repare the message to the group
-        msg = ''
         if in_group:
-            msg = f'{requester_name} has rejoin'
-        else:
-            self.groups[group_name].append(client)
-            msg = f'{requester_name} has join'
+            self.send_message(client.socket, {             
+                EntryForFormatedMessage.action: ServerAction.error,
+                EntryForFormatedMessage.errorType: ErrorType.alreadyInGroup
+            })
+            return
 
-        # broadcast that client has join
-        joinMessage = {
-            EntryForFormatedMessage.action: ServerAction.info,
-            EntryForFormatedMessage.content: msg
-            }
-        self.broadcast(joinMessage, target = group_name, ignore=client.socket)
+        admin = members[0]
+        keyRequester = (client.nickname, client.public_key)
 
-        # make the client join the group
-        make_join = {
-            EntryForFormatedMessage.action: ServerAction.joinGroup,
-            EntryForFormatedMessage.groupName: group_name}
-        self.send_message(client.socket, make_join)
+        # envoyer une requete à l'admin pour demande la clé de groupe
+        self.send_message(admin.socket, {
+            EntryForFormatedMessage.action: ServerAction.requestKey,
+            EntryForFormatedMessage.groupName: group_name,
+            EntryForFormatedMessage.keyRequester: keyRequester
+        })
+
+        # enregistrer une fonction de rappel pour traiter la réponse de l'admin
+        self.register_callback_for_groupkey_response(
+            group_name,
+            lambda key, client : self.handle_key_from_admin(key, client, group_name)
+        )
 
 
 server = server_socket()
