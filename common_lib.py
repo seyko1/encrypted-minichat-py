@@ -38,6 +38,7 @@ class EntryForFormatedMessage:
 
 class ErrorType:
     nicknameTaken = "nicknameTaken"
+    groupNameTaken = "groupNameTaken"
 
 
 def encode_full_message(msg: dict) -> bytes:

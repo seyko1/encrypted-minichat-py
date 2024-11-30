@@ -208,23 +208,20 @@ class server_socket ():
                 ## Must be changed.
 
             case ClientAction.requestAddGroup:
-                groupName = message[EntryForFormatedMessage.groupName]
+                group_name = message[EntryForFormatedMessage.groupName]
+                creator_name = message[EntryForFormatedMessage.sender]
 
-                # check if it exist
-                for group in list(self.groups.keys()):
-                    if group == groupName:
-                        return
-                
-                #create the group
-                self.groups[groupName] = []
-                
-                #broadcast all the groups
-                groupsListUpdate = {
-                    EntryForFormatedMessage.action: ServerAction.shareGroups,
-                    EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
-                
-                for client in self.clients:
-                    self.send_message(client.socket, groupsListUpdate)
+                # check if the group name already exists
+                if group_name in self.groups:
+                    group_name_taken = {             
+                        EntryForFormatedMessage.action: ServerAction.error,
+                        EntryForFormatedMessage.errorType: ErrorType.groupNameTaken,
+                        EntryForFormatedMessage.groupName: group_name
+                    }
+                    self.send_message(client.socket, group_name_taken)
+                    return
+
+                self.add_group(group_name, creator_name)
 
             case ClientAction.requestLeaveGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
@@ -244,7 +241,6 @@ class server_socket ():
                     EntryForFormatedMessage.content: f'{senderName} has leave'}
                 self.broadcast(clientHasLeave, target=groupName)
 
-
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 
@@ -262,6 +258,26 @@ class server_socket ():
     def send_message(self, client: socket.socket, entries: dict, sender = "server", target = ""):
         common_lib.send_message(client, sender, target, entries)
 
+    def add_group(self, group_name: str, creator_name: str):
+        client = Client.get_client(creator_name, self.clients)
+
+        # create the group with his creator
+        self.groups[group_name] = [client]
+
+        # make the creator join the group
+        makeJoin = {
+            EntryForFormatedMessage.action: ServerAction.joinGroup,
+            EntryForFormatedMessage.groupName: group_name}
+        self.send_message(client.socket, makeJoin)
+        
+        # broadcast all the groups
+        share_groups = {
+            EntryForFormatedMessage.action: ServerAction.shareGroups,
+            EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
+        }
+
+        for client in self.clients:
+            self.send_message(client.socket, share_groups)
 
 
 server = server_socket()

@@ -189,6 +189,9 @@ class ClientNetwork:
                 case ErrorType.nicknameTaken:
                     print("Nom déjà utilisé")
                     #must be shown to the user, on the Connection interface
+                case ErrorType.groupNameTaken:
+                    group_name = message[EntryForFormatedMessage.groupName]
+                    print(f"Le groupe {group_name} existe déjà.")
 
 
 class ClientUi(tk.Tk):
