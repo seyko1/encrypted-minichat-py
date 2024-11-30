@@ -1,18 +1,19 @@
 import socket
 import threading
 import tkinter as tk
-from common_lib import ServerAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, ErrorType
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
 from rsa import gen_rsa_keypair, rsa_key_to_hex
 
 
+
 class ClientNetwork:
-    def __init__(self, nickname: str, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
+    def __init__(self, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
         self.host = host
         self.port = port
-        self.nickname = nickname
+        self.nickname = None
         self.rsa_keypair = None
         self.ui = ui
         self.socket: socket.socket = None
@@ -22,9 +23,13 @@ class ClientNetwork:
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
 
+        self.connect_to_server()
+
+
     @property
     def display_callback(self):
         return self._display_callback
+
 
     @display_callback.setter
     def display_callback(self, callback):
@@ -32,37 +37,56 @@ class ClientNetwork:
             raise ValueError("display_callback doit être une fonction.")
         self._display_callback = callback
 
-    def connect(self):
+
+    def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.rsa_keypair = gen_rsa_keypair(512)
 
         try:
             self.socket.connect((self.host, self.port))
-            self.sharePublicKey()
 
             # lancer le thread de reception des messages
             self.receive_thread = threading.Thread(target=self.receive_messages)
             self.receive_thread.start()
+
         except Exception:
             self.disconnect()
+            print("Le server n'est pas ouvert.")
+            exit()
+
+
+    def log_in(self, nickname: str):
+        self.rsa_keypair = gen_rsa_keypair(512)
+
+        public_key = self.rsa_keypair[0]
+        hexkey = rsa_key_to_hex(public_key)
+
+        requestConnection = {
+            EntryForFormatedMessage.action: ClientAction.requestConnection,
+            EntryForFormatedMessage.nickname: nickname,
+            EntryForFormatedMessage.public_key: hexkey
+        }
+        self.send_message(requestConnection)
+
 
     def disconnect(self):
         if self.socket:
             self.socket.close()
+
 
     def sharePublicKey(self):
         public_key = self.rsa_keypair[0]
         hexkey = rsa_key_to_hex(public_key)
 
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.sharePublicKey,
+            EntryForFormatedMessage.action: ClientAction.sharePublicKey,
             EntryForFormatedMessage.public_key: hexkey
         }
         self.send_message(request)
 
+
     def joinGroup(self, groupName):
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.requestJoinGroup,
+            EntryForFormatedMessage.action: ClientAction.requestJoinGroup,
             EntryForFormatedMessage.groupName: groupName
         }
         self.send_message(request)
@@ -70,7 +94,7 @@ class ClientNetwork:
 
     def leaveGroup(self, groupName):
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.requestLeaveGroup,
+            EntryForFormatedMessage.action: ClientAction.requestLeaveGroup,
             EntryForFormatedMessage.groupName: groupName
         }
         self.send_message(request)
@@ -78,7 +102,7 @@ class ClientNetwork:
 
     def addGroup(self, groupName):
         request = {
-            EntryForFormatedMessage.action: common_lib.ClientAction.requestAddGroup,
+            EntryForFormatedMessage.action: ClientAction.requestAddGroup,
             EntryForFormatedMessage.groupName: groupName
         }
         self.send_message(request)
@@ -87,6 +111,7 @@ class ClientNetwork:
     def send_message(self, entries: dict = {}, target = "server"):
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
+
     def receive_messages(self):
         while True:
             try:
@@ -100,6 +125,7 @@ class ClientNetwork:
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
                     self.display_callback(message[EntryForFormatedMessage.content], sender)
+
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
@@ -113,6 +139,28 @@ class ClientNetwork:
             case ServerAction.info:
                 content = message[EntryForFormatedMessage.content]
                 self.display_callback(content)
+
+            case ServerAction.error:
+                self.handle_error(message)
+            
+            case ServerAction.acceptConnection:
+                #get confirmed nickName
+                new_name = message[EntryForFormatedMessage.nickname]
+                self.nickname = new_name
+                self.ui.nickname = new_name
+
+                #get groups
+                groups = message[EntryForFormatedMessage.groupsList]
+                groups = ast.literal_eval(groups)
+                for group in groups:
+                    self.groups[group] = {}
+
+                #switch interface
+                self.ui.groupChoice_ui()
+
+            case ServerAction.giveTempNickname:
+                tempNickname = message[EntryForFormatedMessage.nickname]
+                self.nickname = tempNickname
 
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
@@ -135,9 +183,17 @@ class ClientNetwork:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
 
+    def handle_error(self, message: dict):
+            errorType = message[EntryForFormatedMessage.errorType]
+            match errorType:
+                case ErrorType.nicknameTaken:
+                    print("Nom déjà utilisé")
+                    #must be shown to the user, on the Connection interface
+
 
 class ClientUi(tk.Tk):
     TITLE = "P8 Mini Chat"
+
 
     def __init__(self): #nickname devrait être demandé dans la méthode de connection, mais pour l'instant, on l'obtient avant la création de l'ui
         super().__init__()
@@ -146,15 +202,15 @@ class ClientUi(tk.Tk):
         self.nickname = None
         self.current_ui: str = "" #used to reload the groupe page when a new group comes
 
+        self.start_network_connection()
         self.connection_ui()
 
 
-    def try_to_connect(self, nickname: str):
+    def try_to_log_in(self, nickname: str):
         if not nickname:
             return
         self.nickname = nickname
-        self.start_network_connection(nickname)
-        self.groupChoice_ui()
+        self.network_client.log_in(nickname)
     
 
     def try_to_join_group(self, groupName: str):
@@ -173,11 +229,10 @@ class ClientUi(tk.Tk):
         self.groupChoice_ui()
 
 
-    def start_network_connection(self, nickname: str):
-        self.network_client = ClientNetwork(nickname, self, host = "localhost", port = 5555)
+    def start_network_connection(self):
+        self.network_client = ClientNetwork(self)
 
         self.network_client.display_callback = self.display_messages
-        self.network_client.connect()
 
 
     def clear_ui(self):
@@ -243,7 +298,7 @@ class ClientUi(tk.Tk):
             image=self.entry_button_image,
             borderwidth=0,
             highlightthickness=0,
-            command=lambda: self.try_to_connect(self.nickname_entry.get()),
+            command=lambda: self.try_to_log_in(self.nickname_entry.get()),
             relief="flat"
         )
         button.place(
@@ -394,6 +449,7 @@ class ClientUi(tk.Tk):
         if (message):
             self.network_client.send_message({'content': message}, self.network_client.actual_group)
 
+
     def display_messages(self, message: str, sender = "server"):
         if not message:
             return
@@ -415,6 +471,6 @@ class ClientUi(tk.Tk):
         self.input_space.delete(0, tk.END) # vide l'input
 
 
-client_ui = ClientUi()
 
+client_ui = ClientUi()
 client_ui.mainloop()

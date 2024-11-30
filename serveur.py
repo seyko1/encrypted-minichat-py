@@ -1,14 +1,34 @@
 import socket
 import threading
-from common_lib import ServerAction, EntryForFormatedMessage
+from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, ErrorType
 import common_lib
 from typing import Optional
 
+
+
 class Client ():
-    def __init__(self, nickname: str, public_key: tuple[str, str], socket: socket.socket):
-        self.nickname = nickname
-        self.public_key = public_key
+    counter = 0
+
+    def __init__(self, socket: socket.socket):
+        self.id = Client.generate_unique_id()
+        self.nickname:str = self.id
+        self.public_key: tuple[str, str] = None
         self.socket = socket
+    
+
+    def __str__(self) -> str:
+        id = self.id
+        n = self.nickname
+        key = self.public_key
+        sckt = 'Have one' if self.socket else None
+        return f'id:{id}, name:{n}, sckt:{sckt}, key:{key}'
+
+
+    @staticmethod
+    def generate_unique_id() -> str:
+        Client.counter += 1
+        return f'__{Client.counter}'
+
 
     @staticmethod
     def get_client(nickname: str, clientsList: list[Optional['Client']]) -> Optional['Client']:
@@ -19,6 +39,17 @@ class Client ():
         # should not happen
         return None
 
+
+    def update_data(self, nickname: str = None, public_key: tuple[str, str] = None, socket: socket.socket = None) -> None:
+        if nickname:
+            self.nickname = nickname
+        if public_key:
+            self.public_key = public_key
+        if socket:
+            self.socket = socket
+
+
+
 class server_socket ():
     def __init__(self, host: str = "", port: int = 5555):
         self.host = host # localhost by default
@@ -28,6 +59,17 @@ class server_socket ():
 
         self.groups: dict[str | Client] = {"default": [], "L3B": [], "Les Monsieurs": [], "Les madames": []}
         self.clients: list[Client] = []
+
+        #add a temporary client, for testing
+        osef_client = Client(None)
+        osef_client.update_data(nickname="useless bro")
+        self.clients.append(osef_client)
+
+
+    def show_clients(self):
+        for i, client in enumerate(self.clients, 1):
+            print(f'{i:>3} | {client}')
+
 
     # Envoie un message à tous les clients du groupe ciblé
     def broadcast(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
@@ -60,37 +102,68 @@ class server_socket ():
                 self.broadcast(entries, target=target)
                 break
 
+
     def receive(self):
         while True:
             socket, address = self.server.accept()
             print(f"Connected with {str(address)}\n")
 
-            msg = common_lib.receive_message(socket)
-
-            nickname = msg[EntryForFormatedMessage.sender]            
-            public_key = msg[EntryForFormatedMessage.public_key]
-
-            new_client = Client(nickname, public_key, socket)
+            new_client = Client(socket)
             self.clients.append(new_client)
-
-            print(f"Well hello {nickname}\n")
-
-            # SEND EXISTING GROUPS
-            entries_groupsList = {
-                EntryForFormatedMessage.action: ServerAction.shareGroups,
-                EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"}
-            self.send_message(new_client.socket, entries_groupsList)
 
             thread = threading.Thread(target=self.handle, args=(new_client,))
             thread.start()
 
+            #send a temporary nickname
+            tempNickname = new_client.id
+            giveTempNickname = {
+                EntryForFormatedMessage.action: ServerAction.giveTempNickname,
+                EntryForFormatedMessage.nickname: tempNickname
+            }
+            self.send_message(new_client.socket, giveTempNickname)
+
+            self.show_clients()
+
 
     def handle_action_from_client(self, message: dict):
-        action = message[common_lib.EntryForFormatedMessage.action]
+        action = message[EntryForFormatedMessage.action]
 
         match action:
-            case common_lib.ClientAction.requestJoinGroup:
-                groupName = message[common_lib.EntryForFormatedMessage.groupName]
+            case ClientAction.requestConnection:
+                sender = message[EntryForFormatedMessage.sender]
+                public_key = message[EntryForFormatedMessage.public_key]
+                nickname = message[EntryForFormatedMessage.nickname]
+                client_connecting = Client.get_client(sender, self.clients)
+
+                #search for client with the same nickname
+                firstConnection = True
+                for client in self.clients:
+                    if nickname == client.nickname:
+                        firstConnection = False
+                
+                #valideConnection
+                if firstConnection:
+                    client_connecting.update_data(nickname, public_key)
+
+                    #confirme connection, and share groups list
+                    acceptConnection = {
+                        EntryForFormatedMessage.action: ServerAction.acceptConnection,
+                        EntryForFormatedMessage.nickname: nickname,
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
+                    }
+                    self.send_message(client_connecting.socket, acceptConnection)
+                    self.show_clients()
+                
+                #refuseConnection
+                else:
+                    refuseConnection = {
+                        EntryForFormatedMessage.action: ServerAction.error,
+                        EntryForFormatedMessage.errorType: ErrorType.nicknameTaken
+                    }
+                    self.send_message(client_connecting.socket, refuseConnection)
+
+            case ClientAction.requestJoinGroup:
+                groupName = message[EntryForFormatedMessage.groupName]
 
                 ## TODO
                 ##
@@ -99,7 +172,7 @@ class server_socket ():
 
                 ## Here's the protocole without the key.
                 ## Must be changed.
-                senderName = message[common_lib.EntryForFormatedMessage.sender]
+                senderName = message[EntryForFormatedMessage.sender]
                 groupMembers: list[Client] = self.groups[groupName]
 
                 # determine if the client is already a member
@@ -121,20 +194,20 @@ class server_socket ():
 
                 #broadcast that client has join
                 joinMessage = {
-                    common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.info,
-                    common_lib.EntryForFormatedMessage.content: msg
+                    EntryForFormatedMessage.action: ServerAction.info,
+                    EntryForFormatedMessage.content: msg
                     }
                 self.broadcast(joinMessage, target = groupName, ignore=client.socket)
 
                 #make the client join the group
                 makeJoin = {
-                    common_lib.EntryForFormatedMessage.action: common_lib.ServerAction.joinGroup,
-                    common_lib.EntryForFormatedMessage.groupName: groupName}
+                    EntryForFormatedMessage.action: ServerAction.joinGroup,
+                    EntryForFormatedMessage.groupName: groupName}
                 self.send_message(client.socket, makeJoin)
 
                 ## Must be changed.
 
-            case common_lib.ClientAction.requestAddGroup:
+            case ClientAction.requestAddGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
 
                 # check if it exist
@@ -153,9 +226,9 @@ class server_socket ():
                 for client in self.clients:
                     self.send_message(client.socket, groupsListUpdate)
 
-            case common_lib.ClientAction.requestLeaveGroup:
+            case ClientAction.requestLeaveGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
-                senderName = message[common_lib.EntryForFormatedMessage.sender]
+                senderName = message[EntryForFormatedMessage.sender]
                 client = Client.get_client(senderName, self.clients)
 
                 #remove client
@@ -182,6 +255,7 @@ class server_socket ():
         self.server.listen(10)
 
         print("The server is ready.")
+        self.show_clients()
         self.receive()
 
 
