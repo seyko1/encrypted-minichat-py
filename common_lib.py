@@ -2,7 +2,6 @@ import json
 import socket
 
 
-
 class ServerAction:
     error = "error"
     acceptConnection = "acceptConnection"
@@ -38,6 +37,7 @@ class EntryForFormatedMessage:
 
 class ErrorType:
     nicknameTaken = "nicknameTaken"
+    emptyGroup = "emptyGroup"
 
 
 def encode_full_message(msg: dict) -> bytes:
