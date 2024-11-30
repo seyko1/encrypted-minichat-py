@@ -23,7 +23,7 @@ class ClientNetwork:
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
 
-        self.preconnect()
+        self.connect_to_server()
 
 
     @property
@@ -38,7 +38,7 @@ class ClientNetwork:
         self._display_callback = callback
 
 
-    def preconnect(self):
+    def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
