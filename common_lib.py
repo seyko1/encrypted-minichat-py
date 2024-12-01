@@ -44,7 +44,6 @@ class ErrorType:
     groupNameTaken = "groupNameTaken"
     emptyGroup = "emptyGroup"
     alreadyInGroup = "alreadyInGroup" # si l'utilisateur est déjà dans le groupe ciblé
-    adminDeniedKey = "adminDeniedKey" # si un administrateur n'a pas partagé la clé de groupe
 
 
 def encode_full_message(msg: dict) -> bytes:

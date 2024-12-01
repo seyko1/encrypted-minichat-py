@@ -210,13 +210,6 @@ class server_socket ():
 
                 # retrouver le client pour qui la clé est destinée
                 target_client = Client.get_client(nickname, self.clients)
-                
-                # envoyer un message d'erreur si la réponse n'est pas une shareGroupKey action
-                if not message[EntryForFormatedMessage.action] == ClientAction.shareGroupKey:
-                    self.send_message(client.socket, {
-                        EntryForFormatedMessage.action: ServerAction.error,
-                        EntryForFormatedMessage.errorType: ErrorType.adminDeniedKey
-                    })
 
                 # faire appel à la fonction de callback correspondant au groupe dans le dictionnaire key_response_callbacks
                 # lors d'une prochaine demande pour rejoindre le groupe [group_name] : un nouveau callback écrasera l'ancien dans le dictionnaire
