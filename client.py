@@ -63,7 +63,7 @@ class ClientNetwork:
         requestConnection = {
             EntryForFormatedMessage.action: ClientAction.requestConnection,
             EntryForFormatedMessage.nickname: nickname,
-            EntryForFormatedMessage.public_key: hexkey
+            EntryForFormatedMessage.publicKey: hexkey
         }
         self.send_message(requestConnection)
 
@@ -101,6 +101,13 @@ class ClientNetwork:
 
 
     def addGroup(self, groupName):
+        if groupName in self.groups:
+            print(f"Le groupe {groupName} existe déjà.")
+            return
+
+        # ajouter le groupe avec None, en attendant une confirmation du serveur
+        self.groups[groupName] = None
+
         request = {
             EntryForFormatedMessage.action: ClientAction.requestAddGroup,
             EntryForFormatedMessage.groupName: groupName
@@ -164,6 +171,26 @@ class ClientNetwork:
 
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
+
+                if self.groups.get(groupName) is None:
+                    # Enregistrer la clé du groupe et le pseudo de l'administrateur dans le groupe
+                    
+                    # TODO: Générer une clé de groupe avec secretBox
+                    group_key = "Pwet"
+
+                    self.groups[groupName] = {
+                        'key': group_key,
+                        'members': [self.nickname]
+                    }
+                else :
+                    # Ce client rejoint un groupe existant, donc on met à jour avec la clé reçue
+                    group_key = message[EntryForFormatedMessage.groupKey]
+                    self.groups[groupName].setdefault('key', []).append(group_key)
+                    self.groups[groupName].setdefault('members', []).append(self.nickname)
+
+                print(f"Clé du groupe {groupName} : {self.groups[groupName]['key']}")
+                print(f"Membres du groupe {groupName} : {self.groups[groupName]['members']}")
+                
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")
                 self.ui.conversation_ui(groupName)
@@ -178,6 +205,20 @@ class ClientNetwork:
                     self.groups[group] = {}
                 if self.ui.current_ui == "groupChoice_ui":
                     self.ui.groupChoice_ui()
+
+            case ServerAction.requestKey:
+                group_name = message[EntryForFormatedMessage.groupName]
+                nickname, public_key = message[EntryForFormatedMessage.keyRequester]
+                
+                print(f"requestKey from {nickname}")
+                print(f"clé publique reçue ({public_key[0]}, {public_key[1]})")
+                
+                # envoyer la clé de groupe au serveur
+                self.send_message({
+                    EntryForFormatedMessage.action: ClientAction.shareGroupKey,
+                    EntryForFormatedMessage.groupName: group_name,
+                    EntryForFormatedMessage.groupKey: (nickname, "testKey")
+                })
 
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")

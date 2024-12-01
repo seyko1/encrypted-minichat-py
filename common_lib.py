@@ -10,6 +10,7 @@ class ServerAction:
     joinGroup = "joinGroup"     #allow the client to join a group
     leaveGroup = "leaveGroup"
     shareGroups = "shareGroups" #give the existing groups to the client
+    requestKey = "requestKey" # Envoyer une demande à l'administrateur pour la clé de groupe
 # To perform an action, the server must send a message as the sender,
 # which the "content" must followed the format:
 # => "action:::content of the action"
@@ -18,6 +19,7 @@ class ServerAction:
 class ClientAction:
     requestConnection = 'requestConnection'
     sharePublicKey = 'sharePublicKey'
+    shareGroupKey = 'shareGroupKey' # Partager au serveur la clé du groupe
     requestJoinGroup = "requestJoinGroup"
     requestAddGroup = "requestAddGroup"
     requestLeaveGroup = "requestLeaveGroup"
@@ -30,15 +32,18 @@ class EntryForFormatedMessage:
     action = 'action'          #type of a request or an action
     errorType = 'errorType'
     nickname = 'nickname'
-    public_key = 'public_key'
+    publicKey = 'publicKey'
+    keyRequester = 'keyRequester' # identité d'un participant qui souhaite rejoindre un groupe
     groupsList = 'groupsList'  #a list a group
     groupName = 'groupName'    #name of a specific group
+    groupKey = 'groupKey'    # clé de chiffrement de groupe
 
 
 class ErrorType:
     nicknameTaken = "nicknameTaken"
     groupNameTaken = "groupNameTaken"
     emptyGroup = "emptyGroup"
+    alreadyInGroup = "alreadyInGroup" # si l'utilisateur est déjà dans le groupe ciblé
 
 
 def encode_full_message(msg: dict) -> bytes:
