@@ -1,3 +1,12 @@
+"""
+To-do : 
+- exporter le logo utilisateur (l.182)
+- recuperer les groupes dans le dico du serveur, leurs creer des boutons et les afficher (l.245)
+- recuperer les personnes dans le dico du serveur, leurs creer des boutons et les afficher (l.245)
+- recuperer le status du bouton de liste et adapter les icones des boutons (l.245)
+- eventuellement creer des id pour les differents labels (l.263)
+- exporter le nom du groupe apres sa creation (l.295)
+"""
 import os
 from tkinter import Tk, Frame, Label, Entry, Button, Canvas, PhotoImage
 from typing import Optional
@@ -54,7 +63,7 @@ class ClientUi(Tk):
             "dark": {"bg": "#2C2C2C", "fg": "#E2D0F8", "button": "#444444", "canvas": "#1E1E1E"}
         }
 
-        # Conteneur principal
+        # Fenêtre principale
         window = Frame(self)
         window.pack(side="top", fill="both", expand=True)
         window.grid_rowconfigure(0, weight=1)
@@ -62,7 +71,7 @@ class ClientUi(Tk):
 
         # Création des différentes pages
         self.frames = {}
-        for F in (LoginPage, LandingPage,GroupCreationPage, TextingPage):
+        for F in (LoginPage, LandingPage, GroupCreationPage, TextingPage):
             frame = F(window, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -81,7 +90,7 @@ class ClientUi(Tk):
             frame.update_theme()
 
 
-# Classes pour les différentes pages
+# Fonctions pour les différentes pages
 class ThemedFrame(Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -96,7 +105,7 @@ class ThemedFrame(Frame):
             if isinstance(widget, (Label, Entry)):
                 widget.configure(bg=colors["bg"], fg=colors["fg"])
             elif isinstance(widget, Button):
-                widget.configure(bg=colors["bg"], fg=colors["fg"])
+                widget.configure(bg=colors["bg"], fg=colors["fg"],highlightbackground=colors["bg"],activebackground=colors["bg"])
                 # Mise à jour de l'image si le bouton est enregistré avec un thème
                 if hasattr(widget, "image_key") and widget.image_key in self.button_images:
                     widget.configure(image=self.button_images[widget.image_key][self.controller.theme])
@@ -111,36 +120,87 @@ class ThemedFrame(Frame):
         button.image_key = image_key  # Attribut pour suivre le bouton
         button.configure(image=self.button_images[image_key][self.controller.theme])
 
-# Page de connexion , entrée du pseudo
+    def change_button_image(self, button, gicp, picp,gisp,pisp):
+        """Toggle button pour lister les groupes ou les gens."""
+        if not hasattr(button, 'state'):
+            button.state = 'group'
+        if self.controller.theme == "light":
+            print("claiiiir")
+            gic = PhotoImage(file=gicp) if os.path.exists(gicp) else None
+            pic = PhotoImage(file=picp) if os.path.exists(picp) else None
+            button.images = {
+                'group': gic,
+                'people': pic
+            }
+        else : 
+            print("sombre")
+            gis = PhotoImage(file=gisp) if os.path.exists(gisp) else None
+            pis = PhotoImage(file=pisp) if os.path.exists(pisp) else None
+            button.images = {
+                'group':  gis,
+                'people': pis
+            }
+        button.state = 'people' if button.state == 'group' else 'group'
+        button.configure(image=button.images[button.state])
+
+
+# Page de connexion
 class LoginPage(ThemedFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
-        self.grid_columnconfigure(0, weight=3)
-        self.grid_columnconfigure(1, weight=1)
+    # Configuration de la grille
+        self.grid_columnconfigure(0, weight=2)
+        self.grid_columnconfigure(1, weight=1) 
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
 
-        Label(self, text="Connexion", font=("Montserrat", 32, "bold"), bg="#E2D0F8", fg="#317874").grid(column=0, row=1)
-        Label(self, text="Pseudo", font=("Montserrat", 16, "bold"), bg="#E2D0F8", fg="#317874").grid(column=0, row=3, sticky="w", padx=100)
-        user_entry = Entry(self, bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
-        user_entry.grid(column=0, row=4, sticky="nsew", padx=110, pady=50)
+    #Colonne gauche :
+        # CONNEXION
+        Label(self, text="CONNEXION", fg="#317874", bg="#E2D0F8", font=("Montserrat", 32, "bold")).grid(column=0, row=1, pady=10)
 
-        # Ajout d'une image dynamique pour le bouton
-        entry_button = Button(self, relief="flat", bd=0, command=lambda: controller.show_frame(LandingPage))
-        self.add_button_image(
-            entry_button,
-            image_key="entry",
-            light_image_path="assets/frame0/entry_button.png",
-            dark_image_path="assets/frame1/entry_button_sombre.png"
+        # Pseudo
+        Label(self, text="Pseudo",  fg="#317874", bg="#E2D0F8",font=("Montserrat", 16, "bold")).grid(column=0, row=3, sticky="sw", padx=50, pady=(5, 0))
+
+        # Case pour entrer le pseudo utilisateur
+        user_entry = Entry(
+            self,
+            bd=4,
+            highlightthickness=4,
+            highlightbackground="#cccccc",
+            highlightcolor="#317874",
+            font=("Montserrat", 14)
         )
-        entry_button.grid(column=0, row=7)
-        #rectangle bleu 
-        rectangle_bleu_image = PhotoImage(file="assets/frame0/rectangle_bleu.png")
-        rectangle_bleu = Label(self, image=rectangle_bleu_image)
+        user_entry.grid(column=0, row=4, padx=50, sticky="ew")
+        user_entry.config(width=25) 
+
+        # Bouton Entree
+        button_image_path = "assets/frame0/entry_button.png"
+        self.button_entry_image = PhotoImage(file=button_image_path) if os.path.exists(button_image_path) else None
+        Button(
+            self, image=self.button_entry_image, relief="flat",
+            command=lambda: [print(f"{user_entry.get()}"), controller.show_frame(LandingPage)]
+        ).grid(column=0, row=6, pady=20)
+
+    #Colone droite :
+        #Rectangle bleu
+        self.rectangle_bleu_image = PhotoImage(file="assets/frame0/rectangle_bleu.png")
+        rectangle_bleu = Label(self, image=self.rectangle_bleu_image, bg="#317874")
         rectangle_bleu.grid(column=1, row=0, rowspan=10, columnspan=1, sticky="nsew")
 
-# Page de selection ou de creation du groupe
+    #Ancinne colonne droite
+        # # Titre "RSCHAT" sur la droite
+        # canvas = Canvas(self, width=400, height=1024, bg="#317874", highlightthickness=0)
+        # canvas.grid(column=1, row=0, rowspan=10, sticky="nswe")
+        # Label(self, text="RSCHAT", font=("Montserrat", 32, "bold"), fg="#E2D0F8", bg="#317874").grid(column=1, row=3)
+
+        # # Image en dessous du titre (réduction de la taille)
+        # logo_image_path = "assets/frame0/logo_chat.png"
+        # if os.path.exists(logo_image_path):
+        #     self.logo_image = PhotoImage(file=logo_image_path).subsample(2, 2)  # Divise la taille par 2
+        #     Label(self, image=self.logo_image, bg="#317874").grid(column=1, row=4)
+
+
 class LandingPage(ThemedFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
@@ -151,8 +211,12 @@ class LandingPage(ThemedFrame):
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
 
+    # Colonne gauche
+        #RSCHAT
+        Label(self, text="RSCHAT", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=0, sticky="w")
+
         # Bouton pour changer le thème
-        theme_button = Button(self, relief="flat", bd=0, command=controller.toggle_theme)
+        theme_button = Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=controller.toggle_theme)
         self.add_button_image(
             theme_button,
             image_key="theme_switch",
@@ -162,7 +226,7 @@ class LandingPage(ThemedFrame):
         theme_button.grid(column=0, row=1)
 
         # Bouton pour créer un groupe
-        group_button = Button(self, relief="flat", bd=0, command=lambda: controller.show_frame(GroupCreationPage))
+        group_button = Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.show_frame(GroupCreationPage))
         self.add_button_image(
             group_button,
             image_key="group_create",
@@ -171,52 +235,73 @@ class LandingPage(ThemedFrame):
         )
         group_button.grid(column=0, row=2)
 
-        # Rectangle bleu/alternatif
+    # Colonne droite
+        # Rectangle bleu/gris
         canvas1 = Canvas(self, bg="#317874", highlightthickness=0)
         canvas1.grid(column=1, row=0, rowspan=10, sticky="nsew")
 
-        # Bouton groups_button (basculer sur la page de groupes)
-        groups_button = Button(self, relief="flat", bd=0, command=lambda: print("Affiche les groupes"))
+        # Groupchat_button (basculer entre la page des groupes et personnes)
+        groupchat_button = Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874")
+        groupchat_button.configure(command=lambda: self.change_button_image(groupchat_button, "assets/frame1/groups_button_clair.png", "assets/frame1/people_button_clair.png","assets/frame1/groups_button_sombre.png","assets/frame1/people_button_sombre.png"))
+        groupchat_button.grid(column=1, row=0)
         self.add_button_image(
-            groups_button,
+            groupchat_button,
             image_key="groups_button",
             light_image_path="assets/frame1/groups_button_clair.png",
             dark_image_path="assets/frame1/groups_button_sombre.png"
         )
-        groups_button.grid(column=1, row=1)
 
-        # Bouton peoplechat_button (basculer sur la page des discussions privées)
-        peoplechat_button = Button(self, relief="flat", bd=0, command=lambda: print("Affiche les discussions privées"))
+        # Exemple de Peoplechat_button (Redirection vers les pages de convo)
+        peoplechat_button = Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874", command=lambda: [print("Affiche les discussions privées"),controller.show_frame(TextingPage)])
         self.add_button_image(
             peoplechat_button,
             image_key="peoplechat_button",
-            light_image_path="assets/frame1/peoplechat_button_clair.png",
-            dark_image_path="assets/frame1/peoplechat_button_sombre.png"
+            light_image_path="assets/frame1/groupchat_button_clair.png",
+            dark_image_path="assets/frame1/groupchat_button_sombre.png"
         )
         peoplechat_button.grid(column=1, row=2)
+        Label(self, text="Exemple d'affichage de convo", bg="#E2D0F8", fg="black", font=("Montserrat", 12, "normal")).grid(column=1, row=2)
+
 
 # Page de création du groupe
 class GroupCreationPage(ThemedFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
-        # Configuration de la grille : 1 colonne et 1à lignes
+        # Configuration de la grille :
         self.grid_columnconfigure(0, weight=1)
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
-    #Il faut recuperer le theme pour adapter la page
-        #On pose le logo
-        Label(self, text="RSCHAT", bg="#317874", fg="#E2D0F8", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
-        #On pose le rectangle principal 
-        pad_image = PhotoImage(file="assets/frame2/grouppad_clair.png")
-        Label(self, image=pad_image).grid(column=0, row=2)
-        #On pose le text entry du groupname
-        groupname_entry = Entry(self, bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
-        groupname_entry.grid(column=0, row=3)
-        #On pose le bouton valider 
-        Button(self, image=PhotoImage(file="assets/frame2/valider_button_clair.png")).grid(row=4)
+        self.configure(bg="#317874")
 
-# Interface pour le chat de groupe
+        #RSCHAT
+        Label(self, text="RSCHAT", bg="#317874", fg="#E2D0F8", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
+
+        #Rectangle principal 
+        grouppad = Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874")
+        self.add_button_image(
+            grouppad,
+            image_key="grouppad_button",
+            light_image_path="assets/frame2/grouppad_clair.png",
+            dark_image_path="assets/frame2/grouppad_sombre.png"
+        )
+        grouppad.grid(column=0,row=1)
+        
+        # Entry du groupname
+        groupname_entry = Entry(self, bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
+        groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
+
+        # Bouton valider
+        valider_button = Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874", command=lambda: [print(f"{groupname_entry.get()}"), controller.show_frame(LandingPage)])
+        self.add_button_image(
+            valider_button,
+            image_key="groupname_entry_button",
+            light_image_path="assets/frame2/valider_button_clair.png",
+            dark_image_path="assets/frame2/valider_button_sombre.png"
+        )
+        valider_button.grid(column=0,row=2)
+
+#a finir
 class TextingPage(ThemedFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
