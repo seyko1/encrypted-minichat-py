@@ -101,6 +101,10 @@ class ClientNetwork:
 
 
     def addGroup(self, groupName):
+        if groupName in self.groups:
+            print(f"Le groupe {groupName} existe déjà.")
+            return
+
         # ajouter le groupe avec None, en attendant une confirmation du serveur
         self.groups[groupName] = None
 
