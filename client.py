@@ -20,6 +20,7 @@ class ClientNetwork:
         self.groups: dict = {}
         self.actual_group: str = None
         self.receive_thread: threading.Thread = None  
+        self.listen_messages = True
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
 
@@ -69,6 +70,7 @@ class ClientNetwork:
 
 
     def disconnect(self):
+        self.listen_messages = False
         if self.socket:
             self.socket.close()
 
@@ -120,7 +122,7 @@ class ClientNetwork:
     
 
     def receive_messages(self):
-        while True:
+        while self.listen_messages:
             try:
                 message: dict = common_lib.receive_message(self.socket)
                 sender = message[EntryForFormatedMessage.sender]
