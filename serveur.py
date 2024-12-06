@@ -224,6 +224,17 @@ class server_socket ():
                 callback = self.group_key_response_callbacks[group_name]
                 callback(groupKey, target_client)
 
+            case ClientAction.requestDisconnection:
+                sender = message[EntryForFormatedMessage.sender]
+                client = Client.get_client(sender, self.clients)
+                client.connected = False
+
+                disconnect = {
+                    EntryForFormatedMessage.action: ServerAction.disconnect}
+                self.send_message(client.socket, disconnect)
+
+                client.socket.close()
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 

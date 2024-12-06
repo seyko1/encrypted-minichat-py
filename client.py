@@ -73,6 +73,14 @@ class ClientNetwork:
         self.listen_messages = False
         if self.socket:
             self.socket.close()
+        print("Network closed.")
+
+
+    def requestDisconnection(self):
+        request = {
+            EntryForFormatedMessage.action: ClientAction.requestDisconnection,
+        }
+        self.send_message(request)
 
 
     def sharePublicKey(self):
@@ -222,6 +230,11 @@ class ClientNetwork:
                     EntryForFormatedMessage.groupKey: (nickname, "testKey")
                 })
 
+            case ServerAction.disconnect:
+                self.disconnect()
+                self.listen_messages = False
+                self.ui.destroy()
+
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
@@ -248,8 +261,12 @@ class ClientUi(tk.Tk):
         self.nickname = None
         self.current_ui: str = "" #used to reload the groupe page when a new group comes
 
+        self.protocol("WM_DELETE_WINDOW", lambda: self.on_closing())
         self.start_network_connection()
         self.connection_ui()
+
+    def on_closing(self):
+        self.network_client.requestDisconnection()
 
 
     def try_to_log_in(self, nickname: str):
