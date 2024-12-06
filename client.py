@@ -5,7 +5,8 @@ from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, Erro
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
-from rsa import gen_rsa_keypair, rsa_key_to_hex
+import rsa 
+import secret_box
 
 
 
@@ -55,10 +56,10 @@ class ClientNetwork:
 
 
     def log_in(self, nickname: str):
-        self.rsa_keypair = gen_rsa_keypair(512)
+        self.rsa_keypair = rsa.gen_rsa_keypair(512)
 
         public_key = self.rsa_keypair[0]
-        hexkey = rsa_key_to_hex(public_key)
+        hexkey = rsa.rsa_key_to_hex(public_key)
 
         requestConnection = {
             EntryForFormatedMessage.action: ClientAction.requestConnection,
@@ -75,7 +76,7 @@ class ClientNetwork:
 
     def sharePublicKey(self):
         public_key = self.rsa_keypair[0]
-        hexkey = rsa_key_to_hex(public_key)
+        hexkey = rsa.rsa_key_to_hex(public_key)
 
         request = {
             EntryForFormatedMessage.action: ClientAction.sharePublicKey,
@@ -121,22 +122,22 @@ class ClientNetwork:
 
     def receive_messages(self):
         while True:
-            try:
-                message: dict = common_lib.receive_message(self.socket)
-                sender = message[EntryForFormatedMessage.sender]
-                target = message[EntryForFormatedMessage.target]
-                if sender == "server":
-                    self.handle_message_from_server(message)
-                    continue
+            # try:
+            message: dict = common_lib.receive_message(self.socket)
+            sender = message[EntryForFormatedMessage.sender]
+            target = message[EntryForFormatedMessage.target]
+            if sender == "server":
+                self.handle_message_from_server(message)
+                continue
 
-                # déléguer l'affichage d'un message dans une fonction de rappel
-                if self.display_callback:
-                    self.display_callback(message[EntryForFormatedMessage.content], sender)
+            # déléguer l'affichage d'un message dans une fonction de rappel
+            if self.display_callback:
+                self.display_callback(message[EntryForFormatedMessage.content], sender)
 
-            except Exception as e:
-                print(f"Erreur lors de la reception d'un message : {e}")
-                self.disconnect()
-                break
+            # except Exception as e:
+            #     print(f"Erreur lors de la reception d'un message : {e}")
+            #     self.disconnect()
+            #     break
 
 
     def handle_message_from_server(self, message: dict):
@@ -171,25 +172,29 @@ class ClientNetwork:
 
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
+                group_key = message.get(EntryForFormatedMessage.groupKey)
 
-                if self.groups.get(groupName) is None:
+                if not group_key: #for admin
                     # Enregistrer la clé du groupe et le pseudo de l'administrateur dans le groupe
                     
-                    # TODO: Générer une clé de groupe avec secretBox
-                    group_key = "Pwet"
-
+                    group_box, new_group_key = secret_box.secret_box_gen()
                     self.groups[groupName] = {
-                        'key': group_key,
-                        'members': [self.nickname]
+                        'key': new_group_key,
+                        'secret_box' : group_box
                     }
                 else :
                     # Ce client rejoint un groupe existant, donc on met à jour avec la clé reçue
-                    group_key = message[EntryForFormatedMessage.groupKey]
-                    self.groups[groupName].setdefault('key', []).append(group_key)
-                    self.groups[groupName].setdefault('members', []).append(self.nickname)
+                    group_key_crypte = int(message[EntryForFormatedMessage.groupKey])
+                    private_key = self.rsa_keypair[1]
+                    # soucis avec rsa_dec 
+                    group_key = rsa.rsa_dec(group_key_crypte,private_key[0],private_key[1])
+                    group_box,new_group_key = secret_box.secret_box_gen(secret_box.hexkey_to_bytes(group_key))
+                    self.groups[groupName] = {
+                        'key': new_group_key,
+                        'secret_box' : group_box
+                    }                    
 
                 print(f"Clé du groupe {groupName} : {self.groups[groupName]['key']}")
-                print(f"Membres du groupe {groupName} : {self.groups[groupName]['members']}")
                 
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")
@@ -202,6 +207,8 @@ class ClientNetwork:
                 groups = message[EntryForFormatedMessage.groupsList]
                 groups = ast.literal_eval(groups)
                 for group in groups:
+                    if group in self.groups.keys():
+                        continue
                     self.groups[group] = {}
                 if self.ui.current_ui == "groupChoice_ui":
                     self.ui.groupChoice_ui()
@@ -210,14 +217,12 @@ class ClientNetwork:
                 group_name = message[EntryForFormatedMessage.groupName]
                 nickname, public_key = message[EntryForFormatedMessage.keyRequester]
                 
-                print(f"requestKey from {nickname}")
-                print(f"clé publique reçue ({public_key[0]}, {public_key[1]})")
-                
                 # envoyer la clé de groupe au serveur
+                group_key_crypte = rsa.rsa_enc(self.groups[group_name]['key'],int(public_key[0]), int(public_key[1],16))
                 self.send_message({
                     EntryForFormatedMessage.action: ClientAction.shareGroupKey,
                     EntryForFormatedMessage.groupName: group_name,
-                    EntryForFormatedMessage.groupKey: (nickname, "testKey")
+                    EntryForFormatedMessage.groupKey: (nickname, group_key_crypte)
                 })
 
             case _:
