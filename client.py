@@ -537,3 +537,7 @@ class ClientUi(tk.Tk):
 
 client_ui = ClientUi()
 client_ui.mainloop()
+print("Prog end.\nPlease, Press Ctrl+C...")
+
+# !!! ici, le thread "receive_message" n'a pas été arrếté (trop chiant -_-'')
+

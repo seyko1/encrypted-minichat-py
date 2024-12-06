@@ -235,6 +235,8 @@ class server_socket ():
 
                 client.socket.close()
 
+                self.show_clients()
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 
