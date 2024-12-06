@@ -82,6 +82,10 @@ class server_socket ():
         for client in self.groups[target]:
             if ignore is client.socket:
                 continue
+            if not client.connected:
+                client.pending_messages.setdefault(target, []).append(entries)
+                continue
+
             self.send_message(client.socket, entries, sender, target)
 
 
