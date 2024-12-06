@@ -14,6 +14,8 @@ class Client ():
         self.nickname:str = self.id
         self.public_key: tuple[str, str] = None
         self.socket = socket
+        self.connected = True
+        self.pending_messages = {} #key = group name, value = list of messages
     
 
     def __str__(self) -> str:
@@ -21,7 +23,9 @@ class Client ():
         n = self.nickname
         key = self.public_key
         sckt = 'Have one' if self.socket else None
-        return f'id:{id}, name:{n}, sckt:{sckt}, key:{key}'
+        pending_msgs = list(self.pending_messages.items()) if self.pending_messages else None
+        connected = 'O' if self.connected else 'X'
+        return f'{connected} id:{id}, name:{n}, sckt:{sckt}, key:{key}, waiting_msg:{pending_msgs}'
 
 
     @staticmethod
