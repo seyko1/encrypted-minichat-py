@@ -183,6 +183,7 @@ class ClientNetwork:
                         'secret_box' : group_box
                     }
                 else :
+                    ...
                     # Ce client rejoint un groupe existant, donc on met à jour avec la clé reçue
                     group_key_crypte = int(message[EntryForFormatedMessage.groupKey])
                     private_key = self.rsa_keypair[1]
