@@ -91,7 +91,7 @@ class server_socket ():
 
     # Recevoir les messages de clients connectés
     def handle(self, client: Client):
-        while True:
+        while client.connected:
             try:
                 msg = common_lib.receive_message(client.socket)
                 target = msg[EntryForFormatedMessage.target]
@@ -104,7 +104,7 @@ class server_socket ():
                     self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
 
             except:
-                self.clients.remove(client)
+                client.connected = False
                 client.socket.close()
                 entries = {
                     EntryForFormatedMessage.action: ServerAction.info,
