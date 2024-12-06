@@ -5,7 +5,8 @@ from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, Erro
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
-from rsa import gen_rsa_keypair, rsa_key_to_hex
+import rsa 
+import secret_box
 
 
 
@@ -55,10 +56,10 @@ class ClientNetwork:
 
 
     def log_in(self, nickname: str):
-        self.rsa_keypair = gen_rsa_keypair(512)
+        self.rsa_keypair = rsa.gen_rsa_keypair(512)
 
         public_key = self.rsa_keypair[0]
-        hexkey = rsa_key_to_hex(public_key)
+        hexkey = rsa.rsa_key_to_hex(public_key)
 
         requestConnection = {
             EntryForFormatedMessage.action: ClientAction.requestConnection,
@@ -75,7 +76,7 @@ class ClientNetwork:
 
     def sharePublicKey(self):
         public_key = self.rsa_keypair[0]
-        hexkey = rsa_key_to_hex(public_key)
+        hexkey = rsa.rsa_key_to_hex(public_key)
 
         request = {
             EntryForFormatedMessage.action: ClientAction.sharePublicKey,
@@ -171,22 +172,23 @@ class ClientNetwork:
 
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
+                group_key = message.get(EntryForFormatedMessage.groupKey)
 
-                if self.groups.get(groupName) is None:
+                if not group_key: #for admin
                     # Enregistrer la clé du groupe et le pseudo de l'administrateur dans le groupe
                     
                     # TODO: Générer une clé de groupe avec secretBox
-                    group_key = "Pwet"
-
+                    secret_box, new_group_key = secret_box.secret_box_gen()
                     self.groups[groupName] = {
-                        'key': group_key,
-                        'members': [self.nickname]
+                        'key': new_group_key,
+                        'secret_box' : secret_box
                     }
                 else :
+                    ...
                     # Ce client rejoint un groupe existant, donc on met à jour avec la clé reçue
-                    group_key = message[EntryForFormatedMessage.groupKey]
-                    self.groups[groupName].setdefault('key', []).append(group_key)
-                    self.groups[groupName].setdefault('members', []).append(self.nickname)
+                    # TODO: décrypter la clé de groupe
+                    #self.groups[groupName].setdefault('key', []).append(group_key)
+                    
 
                 print(f"Clé du groupe {groupName} : {self.groups[groupName]['key']}")
                 print(f"Membres du groupe {groupName} : {self.groups[groupName]['members']}")
@@ -214,10 +216,11 @@ class ClientNetwork:
                 print(f"clé publique reçue ({public_key[0]}, {public_key[1]})")
                 
                 # envoyer la clé de groupe au serveur
+                group_key_crypte = rsa.rsa_enc(self.groups[group_name]['key'],public_key[0], public_key[1])
                 self.send_message({
                     EntryForFormatedMessage.action: ClientAction.shareGroupKey,
                     EntryForFormatedMessage.groupName: group_name,
-                    EntryForFormatedMessage.groupKey: (nickname, "testKey")
+                    EntryForFormatedMessage.groupKey: (nickname, group_key_crypte)
                 })
 
             case _:
