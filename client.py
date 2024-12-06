@@ -122,22 +122,22 @@ class ClientNetwork:
 
     def receive_messages(self):
         while True:
-            # try:
-            message: dict = common_lib.receive_message(self.socket)
-            sender = message[EntryForFormatedMessage.sender]
-            target = message[EntryForFormatedMessage.target]
-            if sender == "server":
-                self.handle_message_from_server(message)
-                continue
+            try:
+                message: dict = common_lib.receive_message(self.socket)
+                sender = message[EntryForFormatedMessage.sender]
+                target = message[EntryForFormatedMessage.target]
+                if sender == "server":
+                    self.handle_message_from_server(message)
+                    continue
 
-            # déléguer l'affichage d'un message dans une fonction de rappel
-            if self.display_callback:
-                self.display_callback(message[EntryForFormatedMessage.content], sender)
+                # déléguer l'affichage d'un message dans une fonction de rappel
+                if self.display_callback:
+                    self.display_callback(message[EntryForFormatedMessage.content], sender)
 
-            # except Exception as e:
-            #     print(f"Erreur lors de la reception d'un message : {e}")
-            #     self.disconnect()
-            #     break
+            except Exception as e:
+                print(f"Erreur lors de la reception d'un message : {e}")
+                self.disconnect()
+                break
 
 
     def handle_message_from_server(self, message: dict):
