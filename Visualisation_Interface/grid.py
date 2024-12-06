@@ -53,7 +53,7 @@ class ClientUi(Tk):
         self.client_network = ClientNetwork("Utilisateur", self)  # Instance de ClientNetwork
 
         # Configuration de la fenêtre
-        self.geometry("1400x1024")
+        self.geometry("1280x832")
         self.title("RSCHAT")
 
         # Initialisation du thème
@@ -272,13 +272,13 @@ class GroupCreationPage(ThemedFrame):
         self.grid_columnconfigure(0, weight=1)
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
-        self.configure(bg="#317874")
+        self.configure(bg="#E2D0F8")
 
         #RSCHAT
         Label(self, text="RSCHAT", bg="#317874", fg="#E2D0F8", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
 
         #Rectangle principal 
-        grouppad = Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874")
+        grouppad = Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8")
         self.add_button_image(
             grouppad,
             image_key="grouppad_button",
@@ -288,11 +288,11 @@ class GroupCreationPage(ThemedFrame):
         grouppad.grid(column=0,row=1)
         
         # Entry du groupname
-        groupname_entry = Entry(self, bd=0, highlightthickness=0, bg="#317874", fg="#ffffff")
+        groupname_entry = Entry(self, bd=0, highlightthickness=0, bg="#E2D0F8", fg="#ffffff")
         groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
 
         # Bouton valider
-        valider_button = Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874", command=lambda: [print(f"{groupname_entry.get()}"), controller.show_frame(LandingPage)])
+        valider_button = Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: [print(f"{groupname_entry.get()}"), controller.show_frame(LandingPage)])
         self.add_button_image(
             valider_button,
             image_key="groupname_entry_button",
