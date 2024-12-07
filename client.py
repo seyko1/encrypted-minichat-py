@@ -21,6 +21,7 @@ class ClientNetwork:
         self.groups: dict = {}
         self.actual_group: str = None
         self.receive_thread: threading.Thread = None  
+        self.listen_messages = True
         # fonction de rappel à ajouter depuis la classe parente ClientUi
         self._display_callback = None
 
@@ -70,8 +71,17 @@ class ClientNetwork:
 
 
     def disconnect(self):
+        self.listen_messages = False
         if self.socket:
             self.socket.close()
+        print("Network closed.")
+
+
+    def requestDisconnection(self):
+        request = {
+            EntryForFormatedMessage.action: ClientAction.requestDisconnection,
+        }
+        self.send_message(request)
 
 
     def sharePublicKey(self):
@@ -121,7 +131,7 @@ class ClientNetwork:
     
 
     def receive_messages(self):
-        while True:
+        while self.listen_messages:
             try:
                 message: dict = common_lib.receive_message(self.socket)
                 sender = message[EntryForFormatedMessage.sender]
@@ -229,6 +239,11 @@ class ClientNetwork:
                     EntryForFormatedMessage.groupKey: (nickname, hex_cipher_groupkey)
                 })
 
+            case ServerAction.disconnect:
+                self.disconnect()
+                self.listen_messages = False
+                self.ui.destroy()
+
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
@@ -255,8 +270,12 @@ class ClientUi(tk.Tk):
         self.nickname = None
         self.current_ui: str = "" #used to reload the groupe page when a new group comes
 
+        self.protocol("WM_DELETE_WINDOW", lambda: self.on_closing())
         self.start_network_connection()
         self.connection_ui()
+
+    def on_closing(self):
+        self.network_client.requestDisconnection()
 
 
     def try_to_log_in(self, nickname: str):
@@ -527,3 +546,7 @@ class ClientUi(tk.Tk):
 
 client_ui = ClientUi()
 client_ui.mainloop()
+print("Prog end.\nPlease, Press Ctrl+C...")
+
+# !!! ici, le thread "receive_message" n'a pas été arrếté (trop chiant -_-'')
+

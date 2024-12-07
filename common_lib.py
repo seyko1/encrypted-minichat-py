@@ -11,6 +11,7 @@ class ServerAction:
     leaveGroup = "leaveGroup"
     shareGroups = "shareGroups" #give the existing groups to the client
     requestKey = "requestKey" # Envoyer une demande à l'administrateur pour la clé de groupe
+    disconnect = "disconnect"
 # To perform an action, the server must send a message as the sender,
 # which the "content" must followed the format:
 # => "action:::content of the action"
@@ -23,6 +24,7 @@ class ClientAction:
     requestJoinGroup = "requestJoinGroup"
     requestAddGroup = "requestAddGroup"
     requestLeaveGroup = "requestLeaveGroup"
+    requestDisconnection = "requestDisconnection"
 
 
 class EntryForFormatedMessage:
@@ -97,6 +99,7 @@ def send_message(sckt: socket.socket, sender, target, entries: dict = {}):
 
 def receive_message(sckt: socket.socket) -> dict:
     #get the size of the message
+    print("receive...")
     message_lenght = int.from_bytes(sckt.recv(4), byteorder='big')
     #get the message
     message = decode_full_message(sckt.recv(message_lenght))

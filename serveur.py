@@ -14,6 +14,8 @@ class Client ():
         self.nickname:str = self.id
         self.public_key: tuple[str, str] = None
         self.socket = socket
+        self.connected = True
+        self.pending_messages = {} #key = group name, value = list of messages
     
 
     def __str__(self) -> str:
@@ -21,7 +23,9 @@ class Client ():
         n = self.nickname
         key = self.public_key
         sckt = 'Have one' if self.socket else None
-        return f'id:{id}, name:{n}, sckt:{sckt}, key:{key}'
+        pending_msgs = list(self.pending_messages.items()) if self.pending_messages else None
+        connected = 'O' if self.connected else 'X'
+        return f'{connected} id:{id}, name:{n}, sckt:{sckt}, key:{key}, waiting_msg:{pending_msgs}'
 
 
     @staticmethod
@@ -78,12 +82,16 @@ class server_socket ():
         for client in self.groups[target]:
             if ignore is client.socket:
                 continue
+            if not client.connected:
+                client.pending_messages.setdefault(target, []).append(entries)
+                continue
+
             self.send_message(client.socket, entries, sender, target)
 
 
     # Recevoir les messages de clients connectés
     def handle(self, client: Client):
-        while True:
+        while client.connected:
             try:
                 msg = common_lib.receive_message(client.socket)
                 target = msg[EntryForFormatedMessage.target]
@@ -96,7 +104,7 @@ class server_socket ():
                     self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
 
             except:
-                self.clients.remove(client)
+                client.connected = False
                 client.socket.close()
                 entries = {
                     EntryForFormatedMessage.action: ServerAction.info,
@@ -216,6 +224,20 @@ class server_socket ():
                 callback = self.group_key_response_callbacks[group_name]
                 callback(groupKey, target_client)
 
+            case ClientAction.requestDisconnection:
+                sender = message[EntryForFormatedMessage.sender]
+                client = Client.get_client(sender, self.clients)
+                client.connected = False
+
+                disconnect = {
+                    EntryForFormatedMessage.action: ServerAction.disconnect}
+                self.send_message(client.socket, disconnect)
+
+                client.socket.close()
+                self.broadcast_deconnection(client)
+
+                self.show_clients()
+
             case _:
                 print(f"Client tried this action: [{action}], but as no effect, because is undefined.")
 
@@ -323,6 +345,16 @@ class server_socket ():
             lambda key, client : self.handle_key_from_admin(key, client, group_name)
         )
 
+    def broadcast_deconnection(self, client: Client):
+        # parcourir les groupes auxquels appartient le client
+        for group_name, members in self.groups.items():
+            if client in members:
+                # diffuser uniquement aux membres de ce groupe
+                entries = {
+                    EntryForFormatedMessage.action: ServerAction.info,
+                    EntryForFormatedMessage.content: f"{client.nickname} left group."
+                }
+                self.broadcast(entries, target=group_name, ignore=client.socket)
 
 server = server_socket()
 server.start()
