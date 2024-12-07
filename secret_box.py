@@ -18,8 +18,10 @@ def encrypt(box: nacl.secret.SecretBox, msg: bytes):
 def decrypt(box: nacl.secret.SecretBox, enc_msg: bytes):
     return box.decrypt(enc_msg)
 
-def key_to_hex(key):
-    return binascii.hexlify(key).decode()
+# Conversion de la clé de groupe chiffrée de int vers hexadécimal et vis versa...
 
-def hexkey_to_bytes(hexkey: str):
-    return binascii.unhexlify(hexkey)
+def int_secret_key_to_hex(cipher: int) -> str:
+    return hex(cipher)[2:]
+
+def hex_secret_key_to_int(cipher: str) -> int:
+    return int.from_bytes(binascii.unhexlify(cipher.encode("utf-8")), 'big')

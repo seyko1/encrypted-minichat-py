@@ -172,31 +172,29 @@ class ClientNetwork:
 
             case ServerAction.joinGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
-                group_key = message.get(EntryForFormatedMessage.groupKey)
+                cipher_group_key = message.get(EntryForFormatedMessage.groupKey)
 
-                if not group_key: #for admin
-                    # Enregistrer la clé du groupe et le pseudo de l'administrateur dans le groupe
+                # cas où le serveur répond à une requête de création de groupe.
+                if not cipher_group_key:
+                    # créer une clé pour le nouveau groupe
                     
                     group_box, new_group_key = secret_box.secret_box_gen()
                     self.groups[groupName] = {
-                        'key': new_group_key,
-                        'secret_box' : group_box
+                        'group_box' : group_box,
+                        'group_key': new_group_key
                     }
+                # Cas où le serveur répond à une demande pour rejoindre un groupe existant.
                 else :
-                    ...
-                    # Ce client rejoint un groupe existant, donc on met à jour avec la clé reçue
-                    group_key_crypte = int(message[EntryForFormatedMessage.groupKey])
                     private_key = self.rsa_keypair[1]
 
-                    group_key = rsa.rsa_dec(group_key_crypte,private_key[0],private_key[1])
+                    group_key = rsa.rsa_dec(cipher_group_key, private_key[0], private_key[1])
                     group_box = secret_box.secret_box_gen_by_key(group_key)
 
                     self.groups[groupName] = {
-                        'key': new_group_key,
-                        'secret_box' : group_box
+                        'group_box' : group_box,
+                        'group_key': group_key
                     }                    
 
-                print(f"Clé du groupe {groupName} : {self.groups[groupName]['key']}")
                 
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")

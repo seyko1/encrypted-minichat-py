@@ -31,25 +31,26 @@ def gen_rsa_keypair(bits: int) -> RsaKeypair:
 
     return ((e, n), (d, n))
 
-# Chiffrement à l'aide du message à chiffrer m, de l'exposant de chiffrement exp et du module de chiffrement n
-def rsa_enc(m: str, exp: int, n: int) -> int:
-  # Conversion d'une chaine en bytes, puis en entier.
-  m_int = int.from_bytes(m.encode("utf-8"), 'big')
+# Chiffrement de la clé de groupe à l'aide de l'exposant de chiffrement exp et du module de chiffrement n
+# -> Retourne le chiffré en hexadécimal
+def rsa_enc(key: bytes, exp: int, n: int) -> str:
+  # Conversion de bytes vers un entier.
+  m_int = int.from_bytes(key, 'big')
 
-  # Le message m doit être strictement inférieur à n.
   if m_int >= n:
     raise ValueError("m must be lower to n.")
   
-  return rsa_exp(m_int, exp, n)
+  cipher = rsa_exp(m_int, exp, n)
+  bytes = cipher.to_bytes((cipher.bit_length() + 7) // 8, 'big')
+  return binascii.hexlify(bytes).decode()
 
-# Déchiffrement à l'aide du chiffré c, de l'exposant de déchiffrement exp et du module de chiffrement n
-def rsa_dec(c: int, exp: int, n: int) -> str:
-  m_int = rsa_exp(c, exp, n)
+# Déchiffrement de la clé de groupe à l'aide de l'exposant de déchiffrement exp et du module de chiffrement n
+# -> Retourne la clé déchiffrée en bytes
+def rsa_dec(cipher: str, exp: int, n: int) -> bytes:
+  int_cipher = int(cipher, 16)
+  int_decipher = rsa_exp(int_cipher, exp, n)
 
-  # Conversion inverse d'un entier en chaine de caractère.
-  m = m_int.to_bytes((m_int.bit_length() + 7) // 8, 'big').decode('utf-8')
-
-  return m
+  return int_decipher.to_bytes((int_decipher.bit_length() + 7) // 8, 'big')
 
 # Exponentiation modulaire à partir d'un message m, d'un exposant exp et du module de chiffrement n
 def rsa_exp(m: int, exp: int, n: int) -> int:
