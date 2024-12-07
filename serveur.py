@@ -227,13 +227,10 @@ class server_socket ():
             case ClientAction.requestDisconnection:
                 sender = message[EntryForFormatedMessage.sender]
                 client = Client.get_client(sender, self.clients)
-                client.connected = False
 
-                disconnect = {
-                    EntryForFormatedMessage.action: ServerAction.disconnect}
-                self.send_message(client.socket, disconnect)
-
-                client.socket.close()
+                if client:
+                    client.connected = False
+                    client.socket.close()
 
                 self.show_clients()
 

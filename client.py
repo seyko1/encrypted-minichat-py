@@ -73,6 +73,9 @@ class ClientNetwork:
         self.listen_messages = False
         if self.socket:
             self.socket.close()
+        if self.receive_thread and self.receive_thread.is_alive():
+            # bloquer le programme jusqu'à ce que self.receive_thread termine son exécution
+            self.receive_thread.join()
         print("Network closed.")
 
 
@@ -230,11 +233,6 @@ class ClientNetwork:
                     EntryForFormatedMessage.groupKey: (nickname, "testKey")
                 })
 
-            case ServerAction.disconnect:
-                self.disconnect()
-                self.listen_messages = False
-                self.ui.destroy()
-
             case _:
                 print(f"Server tried this action: [{action}], but as no effect, because is undefined.")
 
@@ -266,7 +264,10 @@ class ClientUi(tk.Tk):
         self.connection_ui()
 
     def on_closing(self):
-        self.network_client.requestDisconnection()
+        if self.network_client:
+            self.network_client.requestDisconnection()
+            self.network_client.disconnect()  
+        self.destroy()
 
 
     def try_to_log_in(self, nickname: str):
@@ -537,7 +538,3 @@ class ClientUi(tk.Tk):
 
 client_ui = ClientUi()
 client_ui.mainloop()
-print("Prog end.\nPlease, Press Ctrl+C...")
-
-# !!! ici, le thread "receive_message" n'a pas été arrếté (trop chiant -_-'')
-
