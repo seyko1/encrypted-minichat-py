@@ -125,24 +125,49 @@ class ClientNetwork:
         }
         self.send_message(request)
 
+    def get_group_box(self, groupName: str):
+        group_box = self.groups.get(groupName, {}).get("group_box", None)
+        
+        if group_box is None:
+            print(f"Clé du groupe {groupName} introuvable.")
+        return group_box
 
-    def send_message(self, entries: dict = {}, target = "server"):
+    def encrypt_msg(self, msg: str, group_name: str):
+        group_box = self.get_group_box(group_name)
+        return secret_box.encrypt(group_box, msg)
+        
+    def decrypt_msg(self, msg: str, group_name: str):
+        group_box = self.get_group_box(group_name)
+        return secret_box.decrypt(group_box, msg)
+         
+    def send_message(self, entries: dict = {}, target = "server"): 
+        if target != "server" and self.actual_group:
+            enc_msg = self.encrypt_msg(entries['content'], self.actual_group)
+            entries['content'] = enc_msg
+        
         common_lib.send_message(self.socket, self.nickname, target, entries)
-    
-
+        
     def receive_messages(self):
         while self.listen_messages:
             try:
                 message: dict = common_lib.receive_message(self.socket)
                 sender = message[EntryForFormatedMessage.sender]
                 target = message[EntryForFormatedMessage.target]
+
                 if sender == "server":
                     self.handle_message_from_server(message)
                     continue
 
+                content = message[EntryForFormatedMessage.content]
+
+                if target == self.actual_group:
+                    dec_msg = self.decrypt_msg(content, self.actual_group)
+                    print(f"message déchiffré : {dec_msg}")
+                    content = dec_msg
+
                 # déléguer l'affichage d'un message dans une fonction de rappel
                 if self.display_callback:
-                    self.display_callback(message[EntryForFormatedMessage.content], sender)
+                    self.display_callback(content, sender)
 
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
