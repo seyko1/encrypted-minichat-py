@@ -11,6 +11,7 @@ class ServerAction:
     leaveGroup = "leaveGroup"
     shareGroups = "shareGroups" #give the existing groups to the client
     requestKey = "requestKey" # Envoyer une demande à l'administrateur pour la clé de groupe
+    disconnect = "disconnect"
 # To perform an action, the server must send a message as the sender,
 # which the "content" must followed the format:
 # => "action:::content of the action"
