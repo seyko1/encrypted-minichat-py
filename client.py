@@ -187,9 +187,10 @@ class ClientNetwork:
                     # Ce client rejoint un groupe existant, donc on met à jour avec la clé reçue
                     group_key_crypte = int(message[EntryForFormatedMessage.groupKey])
                     private_key = self.rsa_keypair[1]
-                    # soucis avec rsa_dec 
+
                     group_key = rsa.rsa_dec(group_key_crypte,private_key[0],private_key[1])
-                    group_box,new_group_key = secret_box.secret_box_gen(secret_box.hexkey_to_bytes(group_key))
+                    group_box = secret_box.secret_box_gen_by_key(group_key)
+
                     self.groups[groupName] = {
                         'key': new_group_key,
                         'secret_box' : group_box
