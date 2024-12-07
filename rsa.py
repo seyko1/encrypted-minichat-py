@@ -55,12 +55,10 @@ def rsa_dec(c: int, exp: int, n: int) -> str:
 def rsa_exp(m: int, exp: int, n: int) -> int:
   return pow(m, exp, n)
 
-def rsa_key_to_hex(key: tuple[int, int]) -> tuple[str, str]:
-  return (
-    int_to_hexa(key[0]),
-    int_to_hexa(key[1])
-  )
+# Conversion de la clé publique RSA de int vers hexadécimal et vis versa...
 
-def int_to_hexa(value: int) -> str:
-    bytes = value.to_bytes((value.bit_length() + 7) // 8, 'big')
-    return binascii.hexlify(bytes).decode('utf-8')
+def int_rsa_key_to_hex(key: tuple[int, int]) -> tuple[str, str]:
+  return tuple(hex(value)[2:] for value in key)
+
+def hex_rsa_key_to_int(hex_key: tuple[str, str]) -> tuple[int, int]:
+  return (int(hex_key[0], 16), int(hex_key[1], 16))

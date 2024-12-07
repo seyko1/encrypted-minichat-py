@@ -59,12 +59,12 @@ class ClientNetwork:
         self.rsa_keypair = rsa.gen_rsa_keypair(512)
 
         public_key = self.rsa_keypair[0]
-        hexkey = rsa.rsa_key_to_hex(public_key)
+        hex_public_key = rsa.int_rsa_key_to_hex(public_key)
 
         requestConnection = {
             EntryForFormatedMessage.action: ClientAction.requestConnection,
             EntryForFormatedMessage.nickname: nickname,
-            EntryForFormatedMessage.publicKey: hexkey
+            EntryForFormatedMessage.publicKey: hex_public_key
         }
         self.send_message(requestConnection)
 
@@ -218,13 +218,17 @@ class ClientNetwork:
             case ServerAction.requestKey:
                 group_name = message[EntryForFormatedMessage.groupName]
                 nickname, public_key = message[EntryForFormatedMessage.keyRequester]
-                
+
+                int_public_key = rsa.hex_rsa_key_to_int(public_key)
+                group_key = self.groups[group_name]['group_key']
+              
                 # envoyer la clé de groupe au serveur
-                group_key_crypte = rsa.rsa_enc(self.groups[group_name]['key'],int(public_key[0]), int(public_key[1],16))
+                hex_cipher_groupkey = rsa.rsa_enc(group_key, int_public_key[0], int_public_key[1])
+
                 self.send_message({
                     EntryForFormatedMessage.action: ClientAction.shareGroupKey,
                     EntryForFormatedMessage.groupName: group_name,
-                    EntryForFormatedMessage.groupKey: (nickname, group_key_crypte)
+                    EntryForFormatedMessage.groupKey: (nickname, hex_cipher_groupkey)
                 })
 
             case _:
