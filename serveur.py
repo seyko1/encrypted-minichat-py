@@ -231,6 +231,7 @@ class server_socket ():
                 if client:
                     client.connected = False
                     client.socket.close()
+                    self.broadcast_deconnection(client)
 
                 self.show_clients()
 
@@ -341,6 +342,16 @@ class server_socket ():
             lambda key, client : self.handle_key_from_admin(key, client, group_name)
         )
 
+    def broadcast_deconnection(self, client: Client):
+        # parcourir les groupes auxquels appartient le client
+        for group_name, members in self.groups.items():
+            if client in members:
+                # diffuser uniquement aux membres de ce groupe
+                entries = {
+                    EntryForFormatedMessage.action: ServerAction.info,
+                    EntryForFormatedMessage.content: f"{client.nickname} left group."
+                }
+                self.broadcast(entries, target=group_name, ignore=client.socket)
 
 server = server_socket()
 server.start()
