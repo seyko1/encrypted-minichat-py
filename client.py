@@ -278,6 +278,11 @@ class ClientUi(tk.Tk):
 
     def try_create_group(self, groupName):
         print(f'Try to create the groupe "{groupName}"')
+        # refuse empty name
+        if not groupName:
+            print("Le nom du groupe ne peut être vide")
+            return
+
         self.network_client.addGroup(groupName)
         self.groupChoice_ui()
 
