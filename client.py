@@ -279,12 +279,20 @@ class ClientUi(tk.Tk):
     def try_create_group(self, groupName):
         print(f'Try to create the groupe "{groupName}"')
         # refuse empty name
-        if not groupName:
+        if not groupName or self.has_only_spaces(groupName):
             print("Le nom du groupe ne peut être vide")
             return
 
         self.network_client.addGroup(groupName)
         self.groupChoice_ui()
+
+
+    def has_only_spaces(self, string: str):
+        string = string.replace('\n', '')
+        for character in string:
+            if character != ' ':
+                return False
+        return True
 
 
     def start_network_connection(self):
