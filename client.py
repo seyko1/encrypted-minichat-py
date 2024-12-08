@@ -5,7 +5,7 @@ from common_lib import ServerAction, ClientAction, EntryForFormatedMessage, Erro
 import common_lib
 import ast #use to transform str sembling as python type list to an atual list: "['default', 'more']" -> list['default', 'more']
 from typing import Optional
-from rsa import gen_rsa_keypair, rsa_key_to_hex
+from rsa import gen_rsa_keypair, int_rsa_key_to_hex
 import os # for os.path.exists()
 
 
@@ -59,7 +59,7 @@ class ClientNetwork:
         self.rsa_keypair = gen_rsa_keypair(512)
 
         public_key = self.rsa_keypair[0]
-        hexkey = rsa_key_to_hex(public_key)
+        hexkey = int_rsa_key_to_hex(public_key)
 
         requestConnection = {
             EntryForFormatedMessage.action: ClientAction.requestConnection,
@@ -76,7 +76,7 @@ class ClientNetwork:
 
     def sharePublicKey(self):
         public_key = self.rsa_keypair[0]
-        hexkey = rsa_key_to_hex(public_key)
+        hexkey = int_rsa_key_to_hex(public_key)
 
         request = {
             EntryForFormatedMessage.action: ClientAction.sharePublicKey,
