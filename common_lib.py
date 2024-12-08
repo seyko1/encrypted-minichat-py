@@ -100,7 +100,7 @@ def send_message(sckt: socket.socket, sender, target, entries: dict = {}):
 
 def receive_message(sckt: socket.socket) -> dict:
     #get the size of the message
-    print("receive...")
+    print("Listen message...")
     message_lenght = int.from_bytes(sckt.recv(4), byteorder='big')
     #get the message
     message = decode_full_message(sckt.recv(message_lenght))
