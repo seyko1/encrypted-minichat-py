@@ -79,7 +79,7 @@ def send_message(sckt: socket.socket, sender, target, entries: dict = {}):
     try:
         print("\n" + "="*20)
         print("   SEND MESSAGE   ")
-        print("="*20)
+        print("= "*10)
 
         print("\n".join([f"{key}: {value}" for key, value in entries.items()]))
         print("="*20)
@@ -107,7 +107,7 @@ def receive_message(sckt: socket.socket) -> dict:
 
     print("\n" + "="*20)
     print("   MESSAGE RECEIVED   ")
-    print("="*20)
+    print("= "*10)
 
     print("\n".join([f"{key}: {value}" for key, value in message.items()]))
     print("="*20)
