@@ -276,7 +276,7 @@ class ClientUi(tk.Tk):
         self.network_client.leaveGroup(groupName)
 
 
-    def try_create_group(self, groupName):
+    def try_create_group(self, groupName:str):
         print(f'Try to create the groupe "{groupName}"')
         # refuse empty name
         if not (groupName and groupName.lstrip()):
