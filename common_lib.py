@@ -77,16 +77,17 @@ def send_message(sckt: socket.socket, sender, target, entries: dict = {}):
         return
 
     try:
+        #formate message
+        msg_formated = formate_message(sender, target, entries)
+
         #DEBUG show message
         print("\n" + "="*20)
         print("   SEND MESSAGE   ")
         print("= "*10)
 
-        print("\n".join([f"{key}: {value}" for key, value in entries.items()]))
+        print("\n".join([f"{key}: {value}" for key, value in msg_formated.items()]))
         print("="*20)
 
-        #formate message
-        msg_formated = formate_message(sender, target, entries)
         #encode message
         encoded_msg = encode_full_message(msg_formated)
         #send the size of the message
