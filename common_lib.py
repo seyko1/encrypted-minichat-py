@@ -116,3 +116,12 @@ def receive_message(sckt: socket.socket) -> dict:
     print("="*20)
 
     return message
+
+
+def show_message(msg: dict, title: str):
+    print("\n" + "="*20)
+    print(f"{title:^20}")
+    print("= "*10)
+
+    print("\n".join([f"{key}: {value}" for key, value in msg.items()]))
+    print("="*20)
