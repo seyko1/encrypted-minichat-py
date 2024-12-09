@@ -114,4 +114,4 @@ def show_message(msg: dict, title: str):
     print("= "*10)
 
     print("\n".join([f"{key}: {value}" for key, value in msg.items()]))
-    print("="*20)
+    print("="*20 + '\n')
