@@ -83,7 +83,8 @@ class server_socket ():
             if ignore is client.socket:
                 continue
             if not client.connected:
-                client.pending_messages.setdefault(target, []).append(entries)
+                formated_message = common_lib.formate_message(sender, target, entries)
+                client.pending_messages.setdefault(target, []).append(formated_message)
                 continue
 
             self.send_message(client.socket, entries, sender, target)
