@@ -79,15 +79,12 @@ def send_message(sckt: socket.socket, sender, target, entries: dict = {}):
         return
 
     try:
-        print("\n" + "="*20)
-        print("   SEND MESSAGE   ")
-        print("= "*10)
-
-        print("\n".join([f"{key}: {value}" for key, value in entries.items()]))
-        print("="*20)
-
         #formate message
         msg_formated = formate_message(sender, target, entries)
+
+        #DEBUG show message
+        show_message(msg_formated, "SEND MESSAGE")
+
         #encode message
         encoded_msg = encode_full_message(msg_formated)
         #send the size of the message
@@ -107,11 +104,16 @@ def receive_message(sckt: socket.socket) -> dict:
     #get the message
     message = decode_full_message(sckt.recv(message_lenght))
 
-    print("\n" + "="*20)
-    print("   MESSAGE RECEIVED   ")
-    print("= "*10)
-
-    print("\n".join([f"{key}: {value}" for key, value in message.items()]))
-    print("="*20)
+    #DEBUG show message
+    show_message(message, "MESSAGE RECEIVED")
 
     return message
+
+
+def show_message(msg: dict, title: str):
+    print("\n" + "="*20)
+    print(f"{title:^20}")
+    print("= "*10)
+
+    print("\n".join([f"{key}: {value}" for key, value in msg.items()]))
+    print("="*20 + '\n')
