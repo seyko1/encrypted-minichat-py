@@ -41,6 +41,15 @@ class ClientNetwork:
         self._display_callback = callback
 
 
+    def show_groups(self):
+        print("\n" + "="*20)
+        print(f"{'GROUPS':^20}")
+        print("= "*10)
+        for name, dictionary in self.groups.items():
+            print(f"{name}:\n" + "\n".join([f"  {key}:\n{value}" for key, value in dictionary.items()]))
+        print("="*20 + '\n')
+
+
     def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -164,6 +173,11 @@ class ClientNetwork:
 
                 if target == self.actual_group:
                     dec_msg = self.decrypt_msg(content, self.actual_group)
+                    reformated_message = {
+                        'sender': sender,
+                        'content': dec_msg
+                    }
+                    self.groups[target]['messages'].append(reformated_message)
                     print(f"message déchiffré : {dec_msg}")
                     content = dec_msg
 
@@ -187,7 +201,10 @@ class ClientNetwork:
         match action:
             case ServerAction.info:
                 content = message[EntryForFormatedMessage.content]
-                self.display_callback(content)
+                group = message[EntryForFormatedMessage.target]
+
+                if group == self.actual_group:
+                    self.display_callback(content)
 
             case ServerAction.error:
                 self.handle_error(message)
@@ -239,7 +256,8 @@ class ClientNetwork:
                     group_box, new_group_key = secret_box.secret_box_gen()
                     self.groups[groupName] = {
                         'group_box' : group_box,
-                        'group_key': new_group_key
+                        'group_key': new_group_key,
+                        'messages': []
                     }
                 # Cas où le serveur répond à une demande pour rejoindre un groupe existant.
                 else :
@@ -250,13 +268,16 @@ class ClientNetwork:
 
                     self.groups[groupName] = {
                         'group_box' : group_box,
-                        'group_key': group_key
+                        'group_key': group_key,
+                        'messages': []
                     }                    
 
                 
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")
                 self.ui.show_frame(TextingPage)
+
+                self.show_groups()
             
             case ServerAction.leaveGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
