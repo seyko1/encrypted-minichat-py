@@ -657,7 +657,7 @@ class GroupCreationPage(ThemedFrame):
         self.configure(bg="#E2D0F8")
 
         #RSCHAT
-        tk.Label(self, text="RSCHAT", bg="#317874", fg="#E2D0F8", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
+        tk.Label(self, text="RSCHAT", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
 
         #Rectangle principal 
         grouppad = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8")
@@ -674,21 +674,22 @@ class GroupCreationPage(ThemedFrame):
         groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
 
         # Bouton valider
-        # valider_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: [print(f"{groupname_entry.get()}"), controller.show_frame(LandingPage)])
-        # self.add_button_image(
-        #     valider_button,
-        #     image_key="groupname_entry_button",
-        #     light_image_path="assets/frame2/valider_button_clair.png",
-        #     dark_image_path="assets/frame2/valider_button_sombre.png"
-        # )
-        # valider_button.grid(column=0,row=2)
-        #TODO VAL: Le bouton juste au dessus n'apparait pas
-        validate = tk.Button(self, text= "Valider", command=lambda:controller.try_create_group(groupname_entry.get()))
-
-        validate.grid(column=0,row=2)
-        cancel = tk.Button(self, text= "Annuler", command=lambda:controller.show_frame(LandingPage))
-        cancel.grid(column=0,row=3)
-
+        valider_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.try_create_group(groupname_entry.get()))
+        self.add_button_image(
+            valider_button,
+            image_key="groupname_entry_button",
+            light_image_path="assets/frame2/valider_button_clair.png",
+            dark_image_path="assets/frame2/valider_button_sombre.png"
+        )
+        valider_button.grid(column=0,row=2)
+        cancel_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.show_frame(LandingPage))
+        self.add_button_image(
+            cancel_button,
+            image_key="groupname_cancel_button",
+            light_image_path="assets/frame2/annuler_button_clair.png",
+            dark_image_path="assets/frame2/annuler_button_sombre.png"
+        )
+        cancel_button.grid(column = 0,row = 3)
 
 
 #a finir
