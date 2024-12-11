@@ -80,13 +80,17 @@ class server_socket ():
     # Envoie un message à tous les clients du groupe ciblé
     def broadcast(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
         for client in self.groups[target]:
+            # don't send to client to ignore
             if ignore is client.socket:
                 continue
+
+            # save message when the client is not connected
             if not client.connected:
                 formated_message = common_lib.formate_message(sender, target, entries)
                 client.pending_messages.setdefault(target, []).append(formated_message)
                 continue
 
+            # send message
             self.send_message(client.socket, entries, sender, target)
 
 
