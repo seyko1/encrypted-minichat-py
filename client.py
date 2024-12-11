@@ -171,6 +171,10 @@ class ClientNetwork:
                 if self.display_callback:
                     self.display_callback(content, sender)
 
+                #clear entry of the TextingPage
+                if sender == self.nickname:
+                    self.ui.frames[TextingPage].clear_entry()
+
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
@@ -798,6 +802,10 @@ class TextingPage(ThemedFrame):
     def init_binds(self):
         self.entry_message.focus()
         self.controller.bind('<Return>', lambda e: self.send_message())
+
+
+    def clear_entry(self):
+        self.entry_message.delete(0, tk.END)
 
 
     def display_message(self, content: str, sender = 'server'):
