@@ -66,11 +66,6 @@ class server_socket ():
         # dictionnaire pour garder les callbacks par groupe
         self.group_key_response_callbacks = {}
 
-        #add a temporary client, for testing
-        osef_client = Client(None)
-        osef_client.update_data(nickname="useless bro")
-        self.clients.append(osef_client)
-
 
     def show_clients(self):
         for i, client in enumerate(self.clients, 1):
