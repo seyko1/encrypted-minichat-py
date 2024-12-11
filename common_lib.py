@@ -5,6 +5,7 @@ import socket
 class ServerAction:
     error = "error"
     acceptConnection = "acceptConnection"
+    acceptReconnection = "acceptReconnection"
     info = "info"               #give data supposed to be shown in the chat
     giveTempNickname = "giveTempNickname"
     joinGroup = "joinGroup"     #allow the client to join a group
@@ -43,6 +44,7 @@ class EntryForFormatedMessage:
 
 class ErrorType:
     nicknameTaken = "nicknameTaken"
+    alreadyConnected = "alreadyConnected"
     groupNameTaken = "groupNameTaken"
     emptyGroup = "emptyGroup"
     alreadyInGroup = "alreadyInGroup" # si l'utilisateur est déjà dans le groupe ciblé

@@ -203,6 +203,23 @@ class ClientNetwork:
                 #switch interface
                 self.ui.show_frame(LandingPage)
 
+            #TODO: Fait les mêmes choses que la connection classic
+            # car on ne traite pas encore les message en attentes
+            case ServerAction.acceptReconnection:
+                #get confirmed nickName
+                new_name = message[EntryForFormatedMessage.nickname]
+                self.nickname = new_name
+                self.ui.nickname = new_name
+
+                #get groups
+                groups = message[EntryForFormatedMessage.groupsList]
+                groups = ast.literal_eval(groups)
+                for group in groups:
+                    self.groups[group] = {}
+
+                #switch interface
+                self.ui.show_frame(LandingPage)
+
             case ServerAction.giveTempNickname:
                 tempNickname = message[EntryForFormatedMessage.nickname]
                 self.nickname = tempNickname
@@ -284,6 +301,9 @@ class ClientNetwork:
             match errorType:
                 case ErrorType.nicknameTaken:
                     print("Nom déjà utilisé")
+                    #must be shown to the user, on the Connection interface
+                case ErrorType.alreadyConnected:
+                    print("Vous êtes déjà connecté ailleurs")
                     #must be shown to the user, on the Connection interface
                 case ErrorType.groupNameTaken:
                     group_name = message[EntryForFormatedMessage.groupName]
