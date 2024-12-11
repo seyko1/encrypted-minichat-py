@@ -357,6 +357,7 @@ class ClientUi(tk.Tk):
         elif page is TextingPage:
             frame.update_group(self.network_client.actual_group)
             self.title(f'{ClientUi.TITLE} - {self.network_client.actual_group} - {self.nickname}')
+            frame.init_binds()
 
 
     def toggle_theme(self):
@@ -792,6 +793,11 @@ class TextingPage(ThemedFrame):
             fg=self.controller.colors[self.controller.theme]["fg"]
         )
         send_button.grid(column=1, row=3, sticky="ew", padx=10, pady=10)
+
+
+    def init_binds(self):
+        self.entry_message.focus()
+        self.controller.bind('<Return>', lambda e: self.send_message())
 
 
     def display_message(self, content: str, sender = 'server'):
