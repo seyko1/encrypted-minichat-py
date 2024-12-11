@@ -227,7 +227,8 @@ class ClientNetwork:
                     group_box, new_group_key = secret_box.secret_box_gen()
                     self.groups[groupName] = {
                         'group_box' : group_box,
-                        'group_key': new_group_key
+                        'group_key': new_group_key,
+                        'messages': []
                     }
                 # Cas où le serveur répond à une demande pour rejoindre un groupe existant.
                 else :
@@ -238,7 +239,8 @@ class ClientNetwork:
 
                     self.groups[groupName] = {
                         'group_box' : group_box,
-                        'group_key': group_key
+                        'group_key': group_key,
+                        'messages': []
                     }                    
 
                 
