@@ -77,8 +77,23 @@ class server_socket ():
             print(f'{i:>3} | {client}')
 
 
+    # Send a message to every client #generaly from server to client
+    def broadcast(self, entries: dict, ignore: socket.socket = None):
+        for client in self.clients:
+            # don't send to client to ignore
+            if ignore is client.socket:
+                continue
+            
+            # don't send to client not connected
+            if not client.connected:
+                continue
+
+            # send message
+            self.send_message(client.socket, entries)
+
+
     # Envoie un message à tous les clients du groupe ciblé
-    def broadcast(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
+    def broadcast_to_group(self, entries: dict, sender = "server", target: str = "default", ignore: socket.socket = None):
         for client in self.groups[target]:
             # don't send to client to ignore
             if ignore is client.socket:
@@ -106,15 +121,16 @@ class server_socket ():
                 else:
                     content = msg[EntryForFormatedMessage.content]
                     sender = msg[EntryForFormatedMessage.sender]
-                    self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
+                    self.broadcast_to_group({EntryForFormatedMessage.content: content}, sender, target)
 
             except:
                 client.connected = False
                 client.socket.close()
-                entries = {
-                    EntryForFormatedMessage.action: ServerAction.info,
-                    EntryForFormatedMessage.content: f"{client.nickname} has left group"}
-                self.broadcast(entries, target=target)
+                #TODO: must be redesigned
+                # entries = {
+                #     EntryForFormatedMessage.action: ServerAction.info,
+                #     EntryForFormatedMessage.content: f"{client.nickname} has left group"}
+                # self.broadcast_to_group(entries, target=target)
                 break
 
 
@@ -215,7 +231,7 @@ class server_socket ():
                 clientHasLeave = {
                     EntryForFormatedMessage.action: ServerAction.info,
                     EntryForFormatedMessage.content: f'{senderName} has leave'}
-                self.broadcast(clientHasLeave, target=groupName)
+                self.broadcast_to_group(clientHasLeave, target=groupName)
 
             case ClientAction.shareGroupKey:
                 group_name = message[EntryForFormatedMessage.groupName]                
@@ -301,7 +317,7 @@ class server_socket ():
             EntryForFormatedMessage.action: ServerAction.info,
             EntryForFormatedMessage.content: f'{client.nickname} has join'
         }
-        self.broadcast(broadcast_msg, target = group_name, ignore=client.socket)
+        self.broadcast_to_group(broadcast_msg, target = group_name, ignore=client.socket)
 
         # make the client join the group with group key
         make_join_msg = {
@@ -359,7 +375,7 @@ class server_socket ():
                     EntryForFormatedMessage.action: ServerAction.info,
                     EntryForFormatedMessage.content: f"{client.nickname} left group."
                 }
-                self.broadcast(entries, target=group_name, ignore=client.socket)
+                self.broadcast_to_group(entries, target=group_name, ignore=client.socket)
 
 server = server_socket()
 server.start()
