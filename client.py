@@ -342,9 +342,12 @@ class ClientUi(tk.Tk):
         frame = self.frames[page]
         frame.tkraise()
 
+        self.unbind('<Return>')
+
         #update title
         if page is LoginPage:
             self.title(f'{ClientUi.TITLE} - Connection')
+            frame.init_binds()
         elif page is LandingPage:
             self.title(f'{ClientUi.TITLE} - Accueil - {self.nickname}')
             frame.update_convo_buttons()
@@ -515,7 +518,7 @@ class LoginPage(ThemedFrame):
         tk.Label(self, text="Pseudo",  fg="#317874", bg="#E2D0F8",font=("Montserrat", 16, "bold")).grid(column=0, row=3, sticky="sw", padx=50, pady=(5, 0))
 
         # Case pour entrer le pseudo utilisateur
-        user_entry = tk.Entry(
+        self.user_entry = tk.Entry(
             self,
             bd=4,
             highlightthickness=4,
@@ -523,15 +526,15 @@ class LoginPage(ThemedFrame):
             highlightcolor="#317874",
             font=("Montserrat", 14)
         )
-        user_entry.grid(column=0, row=4, padx=50, sticky="ew")
-        user_entry.config(width=25) 
+        self.user_entry.grid(column=0, row=4, padx=50, sticky="ew")
+        self.user_entry.config(width=25) 
 
         # Bouton Entree
         button_image_path = "assets/frame0/entry_button.png"
         self.button_entry_image = tk.PhotoImage(file=button_image_path) if os.path.exists(button_image_path) else None
         tk.Button(
             self, image=self.button_entry_image, relief="flat",
-            command=lambda: controller.try_to_log_in(user_entry.get())
+            command=lambda: controller.try_to_log_in(self.user_entry.get())
         ).grid(column=0, row=6, pady=20)
 
     #Colone droite :
@@ -551,6 +554,11 @@ class LoginPage(ThemedFrame):
         # if os.path.exists(logo_image_path):
         #     self.logo_image = tk.PhotoImage(file=logo_image_path).subsample(2, 2)  # Divise la taille par 2
         #     tk.Label(self, image=self.logo_image, bg="#317874").grid(column=1, row=4)
+
+
+    def init_binds(self):
+        self.user_entry.focus()
+        self.controller.bind('<Return>', lambda e: self.controller.try_to_log_in(self.user_entry.get()))
 
 
 
