@@ -304,7 +304,11 @@ class server_socket ():
         print(f'client à l\'origine de la demande : {client.nickname}')
 
         # ajouter le client à l'origine de la demande parmi les membres du groupe
-        self.groups[group_name].append(client)
+        group = self.groups[group_name]
+        already_in_group = any(member.nickname == client.nickname for member in group)
+
+        if not already_in_group:
+            self.groups[group_name].append(client)
 
         # broadcast that client has join
         broadcast_msg = {
@@ -337,12 +341,6 @@ class server_socket ():
         # determine if the client is already a member
         in_group = any(member.nickname == requester_name for member in members)
 
-        if in_group:
-            self.send_message(client.socket, {             
-                EntryForFormatedMessage.action: ServerAction.error,
-                EntryForFormatedMessage.errorType: ErrorType.alreadyInGroup
-            })
-            return
 
         admin = members[0]
         keyRequester = (client.nickname, client.public_key)
