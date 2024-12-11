@@ -12,7 +12,7 @@ import os # for os.path.exists()
 
 
 class ClientNetwork:
-    def __init__(self, ui: Optional['ClientUi'], host = common_lib.HOST, port = common_lib.PORT):
+def __init__(self, ui: Optional['ClientUi'], host = common_lib.HOST, port = common_lib.PORT):
         self.host = host
         self.port = port
         self.nickname = None
@@ -459,6 +459,8 @@ class ThemedFrame(tk.Frame):
             elif isinstance(widget, tk.Canvas):
                 widget.configure(bg=colors["canvas"])
 
+            elif isinstance(widget, tk.Frame):
+                widget.configure(bg=colors["canvas"])
 
     def add_button_image(self, button: tk.Button, image_key: str, light_image_path: str, dark_image_path:str):
         # Ajoute une image associée à un bouton pour chaque thème.
@@ -563,6 +565,8 @@ class LandingPage(ThemedFrame):
         self.grid_columnconfigure(1, weight=2)
         for i in range(10):
             self.grid_rowconfigure(i, weight=1)
+        # Variable indiquant la liste de convos a afficher
+        self.grouplist = "group"
 
     # Colonne gauche
         #RSCHAT
@@ -595,52 +599,53 @@ class LandingPage(ThemedFrame):
 
         # Groupchat_button (basculer entre la page des groupes et personnes)
         groupchat_button = tk.Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874")
-        # groupchat_button.configure(command=lambda: self.change_button_image(groupchat_button, "assets/frame1/groups_button_clair.png", "assets/frame1/people_button_clair.png","assets/frame1/groups_button_sombre.png","assets/frame1/people_button_sombre.png"))
         groupchat_button.configure(command=lambda: print('Does Nothing.'))
-        #TODO must (could) implemente the switch between group and private chat
-        groupchat_button.grid(column=1, row=0)
         self.add_button_image(
             groupchat_button,
             image_key="groups_button",
             light_image_path="assets/frame1/groups_button_clair.png",
             dark_image_path="assets/frame1/groups_button_sombre.png"
         )
+        groupchat_button.grid(column=1, row=0)
 
         # create as many buttons as groupe conversations 
-        self.convo_buttons = tk.Label(self, text="aled", bg="red")
-        self.convo_buttons.grid(column=1, row=2)
+        self.convo_buttons = tk.Frame(self, bg="#317874")
+        self.convo_buttons.grid(column=1, row=3, sticky="nsew")
 
-        # Exemple de Peoplechat_button (Redirection vers les pages de convo)
-        # peoplechat_button = tk.Button(self, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874", command=lambda: [print("Affiche les discussions privées"),controller.show_frame(TextingPage)])
-        # self.add_button_image(
-        #     peoplechat_button,
-        #     image_key="peoplechat_button",
-        #     light_image_path="assets/frame1/groupchat_button_clair.png",
-        #     dark_image_path="assets/frame1/groupchat_button_sombre.png"
-        # )
-        # peoplechat_button.grid(column=1, row=2)
-
-        # tk.Label(self, text="Exemple d'affichage de convo", bg="#E2D0F8", fg="black", font=("Montserrat", 12, "normal")).grid(column=1, row=2)
+        def toggle_list(self):
+            self.grouplist = "people" if self.grouplist == "group" else "group"
+            self.update_convo_buttons()
+            self.change_button_image(
+                self.groupchat_button,
+                "assets/frame1/groups_button_clair.png",
+                "assets/frame1/people_button_clair.png",
+                "assets/frame1/groups_button_sombre.png",
+                "assets/frame1/people_button_sombre.png"
+        )
 
 
     def update_convo_buttons(self):
         # remove present buttons
-        for layout in self.convo_buttons.winfo_children():
-            # TODO VAL ?? remove from self.button_images ?
-            layout.destroy()
+        for widget in self.convo_buttons.winfo_children():
+            widget.destroy()
 
-        groups = self.controller.network_client.groups.keys()
+        if self.grouplist == "group":
+            groups = self.controller.network_client.groups.keys()
+            btn_image_light = "assets/frame1/groupchat_button_clair.png"
+            btn_image_dark = "assets/frame1/groupchat_button_sombre.png"
+        else :
+            print("no people")
 
         # recreate buttons
         for i, groupName in enumerate(groups):
-            btn = tk.Button(self.convo_buttons, text=groupName, relief="flat", bd=0, bg="#317874", activebackground="#317874", highlightbackground="#317874", command = lambda name = groupName: self.controller.try_to_join_group(name))
-            # self.add_button_image(
-            #     btn,
-            #     image_key="peoplechat_button",
-            #     light_image_path="assets/frame1/groupchat_button_clair.png",
-            #     dark_image_path="assets/frame1/groupchat_button_sombre.png"
-            # )
-            btn.grid(column=0, row=i)
+            btn = tk.Button(self.convo_buttons, text=groupName, relief="flat", bd=0, bg="#E2D0F8", fg ="#317874", activebackground="#317874", highlightbackground="#317874", command = lambda name = groupName: self.controller.try_to_join_group(name))
+            self.add_button_image(
+                btn,
+                image_key=f"{self.grouplist}_button_{i}",
+                light_image_path="assets/frame1/groupchat_button_clair.png",
+                dark_image_path="assets/frame1/groupchat_button_sombre.png"
+            )
+            btn.grid(column=0, row=i,sticky="ew")
             # tk.Label(self.convo_buttons, text=groupeName, bg="#E2D0F8", fg="black", font=("Montserrat", 12, "normal")).grid(column=0, row=i)
 
 
