@@ -41,6 +41,15 @@ class ClientNetwork:
         self._display_callback = callback
 
 
+    def show_groups(self):
+        print("\n" + "="*20)
+        print(f"{'GROUPS':^20}")
+        print("= "*10)
+        for name, dictionary in self.groups.items():
+            print(f"{name}:\n" + "\n".join([f"  {key}:\n{value}" for key, value in dictionary.items()]))
+        print("="*20 + '\n')
+
+
     def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
