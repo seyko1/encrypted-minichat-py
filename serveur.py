@@ -251,6 +251,8 @@ class server_socket ():
                 client.socket.close()
                 self.broadcast_deconnection(client)
 
+                self.handle_admin_deconnection(client)
+
                 self.show_clients()
 
             case _:
@@ -357,6 +359,18 @@ class server_socket ():
             group_name,
             lambda key, client : self.handle_key_from_admin(key, client, group_name)
         )
+
+    def handle_admin_deconnection(self, client: Client):
+        # vérifie si le client déconnecté est l'admin (index 0) dans un groupe et le déplace à la fin de la liste.
+        for group_name, members in self.groups.items():
+            if members and members[0] == client:
+                members.append(members.pop(0))  # déplacer l'admin à la fin du groupe
+
+                broadcast_admin_changed = {
+                    EntryForFormatedMessage.action: ServerAction.info,
+                    EntryForFormatedMessage.content: f"{client.nickname} n'est plus admin du groupe."
+                }
+                self.broadcast(broadcast_admin_changed, target=group_name, ignore=client.socket)
 
     def broadcast_deconnection(self, client: Client):
         # parcourir les groupes auxquels appartient le client
