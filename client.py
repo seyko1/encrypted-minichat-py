@@ -192,7 +192,10 @@ class ClientNetwork:
         match action:
             case ServerAction.info:
                 content = message[EntryForFormatedMessage.content]
-                self.display_callback(content)
+                group = message[EntryForFormatedMessage.target]
+
+                if group == self.actual_group:
+                    self.display_callback(content)
 
             case ServerAction.error:
                 self.handle_error(message)
