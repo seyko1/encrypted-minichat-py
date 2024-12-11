@@ -347,6 +347,8 @@ class ClientUi(tk.Tk):
         frame.tkraise()
 
         self.unbind('<Return>')
+        #clear the entry of GroupCreationPage #can't do elsewhere when the groupName is validated
+        self.frames[GroupCreationPage].clear_entry()
 
         #update title
         if page is LoginPage:
@@ -696,7 +698,7 @@ class GroupCreationPage(ThemedFrame):
             dark_image_path="assets/frame2/valider_button_sombre.png"
         )
         valider_button.grid(column=0,row=2)
-        cancel_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.show_frame(LandingPage))
+        cancel_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: [self.clear_entry(), controller.show_frame(LandingPage)])
         self.add_button_image(
             cancel_button,
             image_key="groupname_cancel_button",
@@ -709,6 +711,11 @@ class GroupCreationPage(ThemedFrame):
     def init_binds(self):
         self.groupname_entry.focus()
         self.controller.bind('<Return>', lambda e: self.controller.try_create_group(self.groupname_entry.get()))
+
+
+    def clear_entry(self):
+        self.groupname_entry.delete(0, tk.END)
+
 
 
 #a finir
