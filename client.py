@@ -187,6 +187,8 @@ class ClientNetwork:
                 if self.display_callback:
                     self.display_callback(content, sender)
 
+                self.show_groups()
+
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
                 self.disconnect()
@@ -257,6 +259,8 @@ class ClientNetwork:
                 self.actual_group = groupName
                 print(f"Join group [{groupName}]")
                 self.ui.show_frame(TextingPage)
+
+                self.show_groups()
             
             case ServerAction.leaveGroup:
                 groupName = message[EntryForFormatedMessage.groupName]
