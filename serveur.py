@@ -55,7 +55,7 @@ class Client ():
 
 
 class server_socket ():
-    def __init__(self, host: str = "", port: int = 5555):
+    def __init__(self, host: str = common_lib.HOST, port: int = common_lib.PORT):
         self.host = host # localhost by default
         self.port = port # 5555 by default
 
@@ -65,11 +65,6 @@ class server_socket ():
         self.clients: list[Client] = []
         # dictionnaire pour garder les callbacks par groupe
         self.group_key_response_callbacks = {}
-
-        #add a temporary client, for testing
-        osef_client = Client(None)
-        osef_client.update_data(nickname="useless bro")
-        self.clients.append(osef_client)
 
 
     def show_clients(self):
@@ -164,13 +159,33 @@ class server_socket ():
                     self.send_message(client_connecting.socket, acceptConnection)
                     self.show_clients()
                 
-                #refuseConnection
+                #valide reconnection
                 else:
-                    refuseConnection = {
-                        EntryForFormatedMessage.action: ServerAction.error,
-                        EntryForFormatedMessage.errorType: ErrorType.nicknameTaken
+                    existing_account = Client.get_client(nickname, self.clients)
+                    #already connected
+                    if existing_account.connected:
+                        refuseConnection = {
+                            EntryForFormatedMessage.action: ServerAction.error,
+                            EntryForFormatedMessage.errorType: ErrorType.alreadyConnected
+                        }
+                        self.send_message(client_connecting.socket, refuseConnection)
+                        return
+
+                    # update the existing account with the temporary data of the joining client
+                    rejoining_client = Client.get_client(sender, self.clients)
+                    existing_account.update_data(nickname, public_key, rejoining_client.socket)
+                    existing_account.connected = True
+
+                    self.clients.remove(rejoining_client)
+
+                    #TODO: Il faut aussi envoyer les messages en attentes
+                    acceptReconnection = {
+                        EntryForFormatedMessage.action: ServerAction.acceptReconnection,
+                        EntryForFormatedMessage.nickname: nickname,
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
                     }
-                    self.send_message(client_connecting.socket, refuseConnection)
+                    self.send_message(client_connecting.socket, acceptReconnection)
+                    self.show_clients()
 
             case ClientAction.requestJoinGroup:
                 group_name = message[EntryForFormatedMessage.groupName]

@@ -12,7 +12,7 @@ import os # for os.path.exists()
 
 
 class ClientNetwork:
-    def __init__(self, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
+    def __init__(self, ui: Optional['ClientUi'], host = common_lib.HOST, port = common_lib.PORT):
         self.host = host
         self.port = port
         self.nickname = None
@@ -187,7 +187,9 @@ class ClientNetwork:
                 if self.display_callback:
                     self.display_callback(content, sender)
 
-                self.show_groups()
+                #clear entry of the TextingPage
+                if sender == self.nickname:
+                    self.ui.frames[TextingPage].clear_entry()
 
             except Exception as e:
                 print(f"Erreur lors de la reception d'un message : {e}")
@@ -210,6 +212,23 @@ class ClientNetwork:
                 self.handle_error(message)
             
             case ServerAction.acceptConnection:
+                #get confirmed nickName
+                new_name = message[EntryForFormatedMessage.nickname]
+                self.nickname = new_name
+                self.ui.nickname = new_name
+
+                #get groups
+                groups = message[EntryForFormatedMessage.groupsList]
+                groups = ast.literal_eval(groups)
+                for group in groups:
+                    self.groups[group] = {}
+
+                #switch interface
+                self.ui.show_frame(LandingPage)
+
+            #TODO: Fait les mêmes choses que la connection classic
+            # car on ne traite pas encore les message en attentes
+            case ServerAction.acceptReconnection:
                 #get confirmed nickName
                 new_name = message[EntryForFormatedMessage.nickname]
                 self.nickname = new_name
@@ -310,6 +329,9 @@ class ClientNetwork:
                 case ErrorType.nicknameTaken:
                     print("Nom déjà utilisé")
                     #must be shown to the user, on the Connection interface
+                case ErrorType.alreadyConnected:
+                    print("Vous êtes déjà connecté ailleurs")
+                    #must be shown to the user, on the Connection interface
                 case ErrorType.groupNameTaken:
                     group_name = message[EntryForFormatedMessage.groupName]
                     print(f"Le groupe {group_name} existe déjà.")
@@ -367,17 +389,24 @@ class ClientUi(tk.Tk):
         frame = self.frames[page]
         frame.tkraise()
 
+        self.unbind('<Return>')
+        #clear the entry of GroupCreationPage #can't do elsewhere when the groupName is validated
+        self.frames[GroupCreationPage].clear_entry()
+
         #update title
         if page is LoginPage:
             self.title(f'{ClientUi.TITLE} - Connection')
+            frame.init_binds()
         elif page is LandingPage:
             self.title(f'{ClientUi.TITLE} - Accueil - {self.nickname}')
             frame.update_convo_buttons()
         elif page is GroupCreationPage:
             self.title(f'{ClientUi.TITLE} - Création de groupe - {self.nickname}')
+            frame.init_binds()
         elif page is TextingPage:
             frame.update_group(self.network_client.actual_group)
             self.title(f'{ClientUi.TITLE} - {self.network_client.actual_group} - {self.nickname}')
+            frame.init_binds()
 
 
     def toggle_theme(self):
@@ -540,7 +569,7 @@ class LoginPage(ThemedFrame):
         tk.Label(self, text="Pseudo",  fg="#317874", bg="#E2D0F8",font=("Montserrat", 16, "bold")).grid(column=0, row=3, sticky="sw", padx=50, pady=(5, 0))
 
         # Case pour entrer le pseudo utilisateur
-        user_entry = tk.Entry(
+        self.user_entry = tk.Entry(
             self,
             bd=4,
             highlightthickness=4,
@@ -548,15 +577,15 @@ class LoginPage(ThemedFrame):
             highlightcolor="#317874",
             font=("Montserrat", 14)
         )
-        user_entry.grid(column=0, row=4, padx=50, sticky="ew")
-        user_entry.config(width=25) 
+        self.user_entry.grid(column=0, row=4, padx=50, sticky="ew")
+        self.user_entry.config(width=25) 
 
         # Bouton Entree
         button_image_path = "assets/frame0/entry_button.png"
         self.button_entry_image = tk.PhotoImage(file=button_image_path) if os.path.exists(button_image_path) else None
         tk.Button(
             self, image=self.button_entry_image, relief="flat",
-            command=lambda: controller.try_to_log_in(user_entry.get())
+            command=lambda: controller.try_to_log_in(self.user_entry.get())
         ).grid(column=0, row=6, pady=20)
 
     #Colone droite :
@@ -576,6 +605,11 @@ class LoginPage(ThemedFrame):
         # if os.path.exists(logo_image_path):
         #     self.logo_image = tk.PhotoImage(file=logo_image_path).subsample(2, 2)  # Divise la taille par 2
         #     tk.Label(self, image=self.logo_image, bg="#317874").grid(column=1, row=4)
+
+
+    def init_binds(self):
+        self.user_entry.focus()
+        self.controller.bind('<Return>', lambda e: self.controller.try_to_log_in(self.user_entry.get()))
 
 
 
@@ -682,7 +716,7 @@ class GroupCreationPage(ThemedFrame):
         self.configure(bg="#E2D0F8")
 
         #RSCHAT
-        tk.Label(self, text="RSCHAT", bg="#317874", fg="#E2D0F8", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
+        tk.Label(self, text="RSCHAT", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
 
         #Rectangle principal 
         grouppad = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8")
@@ -695,24 +729,35 @@ class GroupCreationPage(ThemedFrame):
         grouppad.grid(column=0,row=1)
         
         # Entry du groupname
-        groupname_entry = tk.Entry(self, bd=0, highlightthickness=0, bg="#E2D0F8", fg="#ffffff")
-        groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
+        self.groupname_entry = tk.Entry(self, bd=0, highlightthickness=0, bg="#E2D0F8", fg="#ffffff")
+        self.groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
 
         # Bouton valider
-        # valider_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: [print(f"{groupname_entry.get()}"), controller.show_frame(LandingPage)])
-        # self.add_button_image(
-        #     valider_button,
-        #     image_key="groupname_entry_button",
-        #     light_image_path="assets/frame2/valider_button_clair.png",
-        #     dark_image_path="assets/frame2/valider_button_sombre.png"
-        # )
-        # valider_button.grid(column=0,row=2)
-        #TODO VAL: Le bouton juste au dessus n'apparait pas
-        validate = tk.Button(self, text= "Valider", command=lambda:controller.try_create_group(groupname_entry.get()))
+        valider_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.try_create_group(self.groupname_entry.get()))
+        self.add_button_image(
+            valider_button,
+            image_key="groupname_entry_button",
+            light_image_path="assets/frame2/valider_button_clair.png",
+            dark_image_path="assets/frame2/valider_button_sombre.png"
+        )
+        valider_button.grid(column=0,row=2)
+        cancel_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: [self.clear_entry(), controller.show_frame(LandingPage)])
+        self.add_button_image(
+            cancel_button,
+            image_key="groupname_cancel_button",
+            light_image_path="assets/frame2/annuler_button_clair.png",
+            dark_image_path="assets/frame2/annuler_button_sombre.png"
+        )
+        cancel_button.grid(column = 0,row = 3)
 
-        validate.grid(column=0,row=2)
-        cancel = tk.Button(self, text= "Annuler", command=lambda:controller.show_frame(LandingPage))
-        cancel.grid(column=0,row=3)
+
+    def init_binds(self):
+        self.groupname_entry.focus()
+        self.controller.bind('<Return>', lambda e: self.controller.try_create_group(self.groupname_entry.get()))
+
+
+    def clear_entry(self):
+        self.groupname_entry.delete(0, tk.END)
 
 
 
@@ -802,6 +847,15 @@ class TextingPage(ThemedFrame):
             fg=self.controller.colors[self.controller.theme]["fg"]
         )
         send_button.grid(column=1, row=3, sticky="ew", padx=10, pady=10)
+
+
+    def init_binds(self):
+        self.entry_message.focus()
+        self.controller.bind('<Return>', lambda e: self.send_message())
+
+
+    def clear_entry(self):
+        self.entry_message.delete(0, tk.END)
 
 
     def display_message(self, content: str, sender = 'server'):
