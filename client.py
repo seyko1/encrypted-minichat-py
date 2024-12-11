@@ -12,7 +12,7 @@ import os # for os.path.exists()
 
 
 class ClientNetwork:
-    def __init__(self, ui: Optional['ClientUi'], host = 'localhost', port = 5555):
+    def __init__(self, ui: Optional['ClientUi'], host = common_lib.HOST, port = common_lib.PORT):
         self.host = host
         self.port = port
         self.nickname = None

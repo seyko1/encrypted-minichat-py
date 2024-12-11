@@ -1,6 +1,8 @@
 import json
 import socket
 
+HOST = 'localhost'
+PORT = 5555
 
 class ServerAction:
     error = "error"
