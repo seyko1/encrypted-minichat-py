@@ -353,6 +353,7 @@ class ClientUi(tk.Tk):
             frame.update_convo_buttons()
         elif page is GroupCreationPage:
             self.title(f'{ClientUi.TITLE} - Création de groupe - {self.nickname}')
+            frame.init_binds()
         elif page is TextingPage:
             frame.update_group(self.network_client.actual_group)
             self.title(f'{ClientUi.TITLE} - {self.network_client.actual_group} - {self.nickname}')
@@ -678,11 +679,11 @@ class GroupCreationPage(ThemedFrame):
         grouppad.grid(column=0,row=1)
         
         # Entry du groupname
-        groupname_entry = tk.Entry(self, bd=0, highlightthickness=0, bg="#E2D0F8", fg="#ffffff")
-        groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
+        self.groupname_entry = tk.Entry(self, bd=0, highlightthickness=0, bg="#E2D0F8", fg="#ffffff")
+        self.groupname_entry.grid(column=0, row=1, ipadx=230, ipady=10)
 
         # Bouton valider
-        valider_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.try_create_group(groupname_entry.get()))
+        valider_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=lambda: controller.try_create_group(self.groupname_entry.get()))
         self.add_button_image(
             valider_button,
             image_key="groupname_entry_button",
@@ -698,6 +699,11 @@ class GroupCreationPage(ThemedFrame):
             dark_image_path="assets/frame2/annuler_button_sombre.png"
         )
         cancel_button.grid(column = 0,row = 3)
+
+
+    def init_binds(self):
+        self.groupname_entry.focus()
+        self.controller.bind('<Return>', lambda e: self.controller.try_create_group(self.groupname_entry.get()))
 
 
 #a finir
