@@ -171,15 +171,13 @@ class ClientNetwork:
 
                 content = message[EntryForFormatedMessage.content]
 
-                #save the message
-                reformated_message = {
-                    'sender': sender,
-                    'content': self.decrypt_msg(content, target)
-                }
-                self.groups[target]['messages'].append(reformated_message)
-
                 if target == self.actual_group:
                     dec_msg = self.decrypt_msg(content, self.actual_group)
+                    reformated_message = {
+                        'sender': sender,
+                        'content': dec_msg
+                    }
+                    self.groups[target]['messages'].append(reformated_message)
                     print(f"message déchiffré : {dec_msg}")
                     content = dec_msg
 
