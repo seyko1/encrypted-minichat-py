@@ -349,7 +349,7 @@ class ClientUi(tk.Tk):
 
         # Configuration de la fenêtre
         self.geometry("1280x832")
-        self.title("RSCHAT")
+        self.title("P8 Mini Chat")
 
         # Initialisation du thème
         self.theme = "light"
@@ -593,10 +593,10 @@ class LoginPage(ThemedFrame):
         rectangle_bleu.grid(column=1, row=0, rowspan=10, columnspan=1, sticky="nsew")
 
     #Ancinne colonne droite
-        # # Titre "RSCHAT" sur la droite
+        # # Titre "P8 Mini Chat" sur la droite
         # canvas = tk.Canvas(self, width=400, height=1024, bg="#317874", highlightthickness=0)
         # canvas.grid(column=1, row=0, rowspan=10, sticky="nswe")
-        # tk.Label(self, text="RSCHAT", font=("Montserrat", 32, "bold"), fg="#E2D0F8", bg="#317874").grid(column=1, row=3)
+        # tk.Label(self, text="P8 Mini Chat", font=("Montserrat", 32, "bold"), fg="#E2D0F8", bg="#317874").grid(column=1, row=3)
 
         # # Image en dessous du titre (réduction de la taille)
         # logo_image_path = "assets/frame0/logo_chat.png"
@@ -622,8 +622,7 @@ class LandingPage(ThemedFrame):
             self.grid_rowconfigure(i, weight=1)
 
     # Colonne gauche
-        #RSCHAT
-        tk.Label(self, text="RSCHAT", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=0, sticky="w")
+        tk.Label(self, text="P8 Mini Chat", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=0, sticky="w")
 
         # Bouton pour changer le thème
         theme_button = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8", command=controller.toggle_theme)
@@ -713,8 +712,7 @@ class GroupCreationPage(ThemedFrame):
             self.grid_rowconfigure(i, weight=1)
         self.configure(bg="#E2D0F8")
 
-        #RSCHAT
-        tk.Label(self, text="RSCHAT", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
+        tk.Label(self, text="P8 Mini Chat", bg="#E2D0F8", fg="#317874", font=("Montserrat", 24, "bold")).grid(column=0, row=1, sticky="nw")
 
         #Rectangle principal 
         grouppad = tk.Button(self, relief="flat", bd=0, bg="#E2D0F8", activebackground="#E2D0F8", highlightbackground="#E2D0F8")
