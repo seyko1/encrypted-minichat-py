@@ -55,7 +55,7 @@ class Client ():
 
 
 class server_socket ():
-    def __init__(self, host: str = "", port: int = 5555):
+    def __init__(self, host: str = common_lib.HOST, port: int = common_lib.PORT):
         self.host = host # localhost by default
         self.port = port # 5555 by default
 
