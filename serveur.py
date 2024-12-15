@@ -82,7 +82,15 @@ class server_socket ():
                 continue
 
             self.send_message(client.socket, entries, sender, target)
-
+    
+    def broadcast_connection(self, connection_client: Client):
+        for client in self.clients:
+            if connection_client.socket is client.socket:
+                continue
+            self.send_message(client.socket, {
+                EntryForFormatedMessage.action: ServerAction.broadcastNewConnection,
+                EntryForFormatedMessage.newConnectedClient: (connection_client.nickname, connection_client.public_key)
+            }, target=client.nickname)
 
     # Recevoir les messages de clients connectés
     def handle(self, client: Client):
@@ -155,6 +163,7 @@ class server_socket ():
                         EntryForFormatedMessage.nickname: nickname,
                         EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
                     })
+                    self.broadcast_connection(client_connecting)
                 else:
                     # si déjà connecté, refuser la connexion
                     if existing_account.connected:
@@ -178,6 +187,7 @@ class server_socket ():
                         EntryForFormatedMessage.nickname: nickname,
                         EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
                     })
+                    self.broadcast_connection(existing_account)
 
                 self.show_clients()
 
