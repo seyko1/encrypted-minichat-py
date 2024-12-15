@@ -157,11 +157,15 @@ class server_socket ():
                     # mise à jour des données pour une nouvelle connexion
                     client_connecting.update_data(nickname, public_key)
 
+                    # obtenir la liste des clients connectés
+                    connected_clients_info = self.get_connected_clients_info()
+        
                      # envoi d'une confirmation de connexion avec la liste des groupes
                     self.send_message(client_connecting.socket, {
                         EntryForFormatedMessage.action: ServerAction.acceptConnection,
                         EntryForFormatedMessage.nickname: nickname,
-                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}",
+                        EntryForFormatedMessage.connectedClients: connected_clients_info
                     })
                     self.broadcast_connection(client_connecting)
                 else:
@@ -181,11 +185,15 @@ class server_socket ():
                     existing_account.update_data(nickname, public_key, rejoining_client.socket)
                     existing_account.connected = True
 
+                    # obtenir la liste des clients connectés
+                    connected_clients_info = self.get_connected_clients_info()
+
                     #TODO: envoyer plus tard les messages en attentes pour ce client.
                     self.send_message(client_connecting.socket, {
                         EntryForFormatedMessage.action: ServerAction.acceptReconnection,
                         EntryForFormatedMessage.nickname: nickname,
-                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}",
+                        EntryForFormatedMessage.connectedClients: connected_clients_info
                     })
                     self.broadcast_connection(existing_account)
 
@@ -276,6 +284,12 @@ class server_socket ():
     def send_message(self, client: socket.socket, entries: dict, sender = "server", target = ""):
         common_lib.send_message(client, sender, target, entries)
 
+    def get_connected_clients_info(self) -> list[dict]:
+        # retourne une liste où chaque entrée contient le nickname et la clé publique d'un client connecté
+        return [
+            {"nickname": client.nickname, "public_key": client.public_key}
+            for client in self.clients if client.connected
+        ]
 
     def add_group(self, group_name: str, creator_name: str):
         client = Client.get_client(creator_name, self.clients)
