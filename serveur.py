@@ -135,57 +135,51 @@ class server_socket ():
 
         match action:
             case ClientAction.requestConnection:
-                sender = message[EntryForFormatedMessage.sender]
-                public_key = message[EntryForFormatedMessage.publicKey]
-                nickname = message[EntryForFormatedMessage.nickname]
+                sender            = message[EntryForFormatedMessage.sender]
+                public_key        = message[EntryForFormatedMessage.publicKey]
+                nickname          = message[EntryForFormatedMessage.nickname]
+
                 client_connecting = Client.get_client(sender, self.clients)
 
-                #search for client with the same nickname
-                firstConnection = True
-                for client in self.clients:
-                    if nickname == client.nickname:
-                        firstConnection = False
-                
-                #valideConnection
-                if firstConnection:
+                # vérifier si le pseudo est déjà utilisé
+                existing_account = Client.get_client(nickname, self.clients)
+                first_connection = existing_account is None
+
+                if first_connection:
+                    # mise à jour des données pour une nouvelle connexion
                     client_connecting.update_data(nickname, public_key)
 
-                    #confirme connection, and share groups list
-                    acceptConnection = {
+                     # envoi d'une confirmation de connexion avec la liste des groupes
+                    self.send_message(client_connecting.socket, {
                         EntryForFormatedMessage.action: ServerAction.acceptConnection,
                         EntryForFormatedMessage.nickname: nickname,
                         EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
-                    }
-                    self.send_message(client_connecting.socket, acceptConnection)
-                    self.show_clients()
-                
-                #valide reconnection
+                    })
                 else:
-                    existing_account = Client.get_client(nickname, self.clients)
-                    #already connected
+                    # si déjà connecté, refuser la connexion
                     if existing_account.connected:
-                        refuseConnection = {
+                        self.send_message(client_connecting.socket,{
                             EntryForFormatedMessage.action: ServerAction.error,
                             EntryForFormatedMessage.errorType: ErrorType.alreadyConnected
-                        }
-                        self.send_message(client_connecting.socket, refuseConnection)
+                        })
                         return
 
-                    # update the existing account with the temporary data of the joining client
+                    # retirer le client temporaire
                     rejoining_client = Client.get_client(sender, self.clients)
+                    self.clients.remove(rejoining_client)
+
+                    # mise à jour des informations pour une reconnexion
                     existing_account.update_data(nickname, public_key, rejoining_client.socket)
                     existing_account.connected = True
 
-                    self.clients.remove(rejoining_client)
-
-                    #TODO: Il faut aussi envoyer les messages en attentes
-                    acceptReconnection = {
+                    #TODO: envoyer plus tard les messages en attentes pour ce client.
+                    self.send_message(client_connecting.socket, {
                         EntryForFormatedMessage.action: ServerAction.acceptReconnection,
                         EntryForFormatedMessage.nickname: nickname,
                         EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
-                    }
-                    self.send_message(client_connecting.socket, acceptReconnection)
-                    self.show_clients()
+                    })
+
+                self.show_clients()
 
             case ClientAction.requestJoinGroup:
                 group_name = message[EntryForFormatedMessage.groupName]
