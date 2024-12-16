@@ -79,6 +79,20 @@ class ClientNetwork:
         }
         self.send_message(requestConnection)
 
+    def handle_connection_or_reconnection(self, message: dict):
+        # Récupérer et confirmer le pseudo
+        nickname = message[EntryForFormatedMessage.nickname]
+        self.nickname = nickname
+        self.ui.nickname = nickname
+
+        # Récupérer les groupes
+        groups = message[EntryForFormatedMessage.groupsList]
+        groups = ast.literal_eval(groups)
+        for group in groups:
+            self.groups[group] = {}
+
+        # Basculer l'interface vers la page d'accueil
+        self.ui.show_frame(LandingPage)
 
     def disconnect(self):
         self.listen_messages = False
@@ -210,36 +224,12 @@ class ClientNetwork:
                 self.handle_error(message)
             
             case ServerAction.acceptConnection:
-                #get confirmed nickName
-                new_name = message[EntryForFormatedMessage.nickname]
-                self.nickname = new_name
-                self.ui.nickname = new_name
-
-                #get groups
-                groups = message[EntryForFormatedMessage.groupsList]
-                groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {}
-
-                #switch interface
-                self.ui.show_frame(LandingPage)
+               self.handle_connection_or_reconnection(message)
 
             #TODO: Fait les mêmes choses que la connection classic
             # car on ne traite pas encore les message en attentes
             case ServerAction.acceptReconnection:
-                #get confirmed nickName
-                new_name = message[EntryForFormatedMessage.nickname]
-                self.nickname = new_name
-                self.ui.nickname = new_name
-
-                #get groups
-                groups = message[EntryForFormatedMessage.groupsList]
-                groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {}
-
-                #switch interface
-                self.ui.show_frame(LandingPage)
+                self.handle_connection_or_reconnection(message)
 
             case ServerAction.giveTempNickname:
                 tempNickname = message[EntryForFormatedMessage.nickname]
