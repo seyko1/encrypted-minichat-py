@@ -140,6 +140,10 @@ class ClientNetwork:
         print("Clients connectés :")
         for nickname, public_key in self.connected_clients.items():
             print(f"- {nickname} : Public Key = {public_key}")
+            
+    def get_public_key_by_nickname(self, nickname: str) -> tuple[str, str]:
+        if nickname in self.connected_clients:
+            return tuple(self.connected_clients[nickname])
 
     def joinGroup(self, groupName):
         request = {
@@ -202,6 +206,20 @@ class ClientNetwork:
         secret_key = self.rsa_keypair[1]
         return rsa.rsa_sign(hash, secret_key[0], secret_key[1])
 
+    def is_valid_sign(self, message: dict):
+        cipher    = message[EntryForFormatedMessage.content]
+        signature = message[EntryForFormatedMessage.signature]
+
+        # récupérer la clé publique de l'expéditeur
+        sender = message[EntryForFormatedMessage.sender]
+        pk = self.get_public_key_by_nickname(sender)
+        int_pk = rsa.hex_rsa_key_to_int(pk)
+
+        hash = rsa.hash_sha256(cipher.encode())
+
+        decipher_sign = rsa.rsa_verify(signature.encode(), int_pk[0], int_pk[1])
+
+        return decipher_sign == hash  
 
     def receive_messages(self):
         while self.listen_messages:
@@ -217,6 +235,12 @@ class ClientNetwork:
                 content = message[EntryForFormatedMessage.content]
 
                 if target == self.actual_group:
+                    if not self.is_valid_sign(message):
+                        print("Signature invalide")
+                        return
+                    else:
+                        print("Signature vérifiée")
+
                     dec_msg = self.decrypt_msg(content, self.actual_group)
                     reformated_message = {
                         'sender': sender,

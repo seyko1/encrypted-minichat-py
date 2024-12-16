@@ -64,6 +64,13 @@ def rsa_sign(hash: bytes, key: int, exp: int) -> bytes:
   sign_bytes = sign.to_bytes((sign.bit_length() + 7) // 8, 'big')
   return binascii.hexlify(sign_bytes)
   
+def rsa_verify(sign: str, key: int, exp: int):
+   sign_bytes = binascii.unhexlify(sign)
+   sign_int = int.from_bytes(sign_bytes, 'big') 
+   decipher_sign = rsa_exp(sign_int, key, exp)
+   decipher_sign_bytes = decipher_sign.to_bytes((decipher_sign.bit_length() + 7) // 8, 'big')
+   return decipher_sign_bytes
+
 # Exponentiation modulaire à partir d'un message m, d'un exposant exp et du module de chiffrement n
 def rsa_exp(m: int, exp: int, n: int) -> int:
   return pow(m, exp, n)
