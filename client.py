@@ -178,21 +178,30 @@ class ClientNetwork:
             print(f"Clé du groupe {groupName} introuvable.")
         return group_box
 
-    def encrypt_msg(self, msg: str, group_name: str):
+    def encrypt_msg(self, msg: str, group_name: str) -> bytes:
         group_box = self.get_group_box(group_name)
         return secret_box.encrypt(group_box, msg)
         
-    def decrypt_msg(self, msg: str, group_name: str):
+    def decrypt_msg(self, msg: str, group_name: str) -> str:
         group_box = self.get_group_box(group_name)
         return secret_box.decrypt(group_box, msg)
          
     def send_message(self, entries: dict = {}, target = "server"): 
         if target != "server" and self.actual_group:
+            # chiffré
             enc_msg = self.encrypt_msg(entries['content'], self.actual_group)
-            entries['content'] = enc_msg
+            entries['content'] = enc_msg.decode() 
+            # signature
+            sign = self.sign_message(enc_msg)
+            entries['signature'] = sign.decode() 
         
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
+    def sign_message(self, cipher: bytes):
+        hash = rsa.hash_sha256(cipher)
+        secret_key = self.rsa_keypair[1]
+        return rsa.rsa_sign(hash, secret_key[0], secret_key[1])
+
 
     def receive_messages(self):
         while self.listen_messages:

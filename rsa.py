@@ -1,5 +1,6 @@
 import math
 import binascii
+import hashlib
 from typing import TypeAlias
 from Cryptodome.Util.number import getPrime
 
@@ -52,6 +53,17 @@ def rsa_dec(cipher: str, exp: int, n: int) -> bytes:
 
   return int_decipher.to_bytes((int_decipher.bit_length() + 7) // 8, 'big')
 
+def hash_sha256(msg: bytes) -> bytes:
+  sha256_hash = hashlib.sha256()
+  sha256_hash.update(msg)
+  return sha256_hash.digest()
+  
+def rsa_sign(hash: bytes, key: int, exp: int) -> bytes:
+  hash_int = int.from_bytes(hash, 'big') 
+  sign = rsa_exp(hash_int, key, exp)
+  sign_bytes = sign.to_bytes((sign.bit_length() + 7) // 8, 'big')
+  return binascii.hexlify(sign_bytes)
+  
 # Exponentiation modulaire à partir d'un message m, d'un exposant exp et du module de chiffrement n
 def rsa_exp(m: int, exp: int, n: int) -> int:
   return pow(m, exp, n)

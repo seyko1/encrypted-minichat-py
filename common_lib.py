@@ -45,6 +45,7 @@ class EntryForFormatedMessage:
     groupsList = 'groupsList'  #a list a group
     groupName = 'groupName'    #name of a specific group
     groupKey = 'groupKey'    # clé de chiffrement de groupe
+    signature = 'signature'
 
 
 class ErrorType:

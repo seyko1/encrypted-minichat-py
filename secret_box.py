@@ -13,12 +13,12 @@ def secret_box_gen_by_key(secret_key: bytes) -> nacl.secret.SecretBox:
     secret_box = nacl.secret.SecretBox(secret_key)
     return secret_box
 
-def encrypt(box: nacl.secret.SecretBox, msg: str) -> str:
+def encrypt(box: nacl.secret.SecretBox, msg: str) -> bytes:
     enc = box.encrypt(msg.encode())
 
     assert len(enc) == len(msg) + box.NONCE_SIZE + box.MACBYTES
 
-    return base64.b64encode(enc.nonce + enc.ciphertext).decode('utf-8') 
+    return base64.b64encode(enc.nonce + enc.ciphertext)
 
 # déchiffrer un message chiffré et encodé en Base64
 def decrypt(box: nacl.secret.SecretBox, enc_msg: str):

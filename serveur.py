@@ -103,8 +103,13 @@ class server_socket ():
                     self.handle_action_from_client(msg)
                 else:
                     content = msg[EntryForFormatedMessage.content]
+                    signature = msg[EntryForFormatedMessage.signature]
                     sender = msg[EntryForFormatedMessage.sender]
-                    self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
+
+                    self.broadcast({
+                        EntryForFormatedMessage.content: content,
+                        EntryForFormatedMessage.signature: signature
+                    }, sender, target)
 
             except:
                 client.connected = False
