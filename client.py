@@ -19,6 +19,7 @@ class ClientNetwork:
         self.rsa_keypair = None
         self.ui = ui
         self.socket: socket.socket = None
+        self.connected_clients: dict = {}
         self.groups: dict = {}
         self.actual_group: str = None
         self.receive_thread: threading.Thread = None  
@@ -79,6 +80,26 @@ class ClientNetwork:
         }
         self.send_message(requestConnection)
 
+    def handle_connection_or_reconnection(self, message: dict):
+        # Récupérer et confirmer le pseudo
+        nickname = message[EntryForFormatedMessage.nickname]
+        self.nickname = nickname
+        self.ui.nickname = nickname
+
+        # Récupérer les groupes
+        groups = message[EntryForFormatedMessage.groupsList]
+        groups = ast.literal_eval(groups)
+        for group in groups:
+            self.groups[group] = {}
+
+        # Basculer l'interface vers la page d'accueil
+        self.ui.show_frame(LandingPage)
+
+        # Mettre à jour les clients connectés
+        clients = message[EntryForFormatedMessage.connectedClients]
+        
+        self.update_connected_clients(clients)
+        self.display_connected_clients()
 
     def disconnect(self):
         self.listen_messages = False
@@ -104,6 +125,21 @@ class ClientNetwork:
         }
         self.send_message(request)
 
+    def update_connected_clients(self, clients: list[dict]):
+        # ajouter ou mettre à jour un client dans la liste des clients connectés
+        for client in clients:
+            nickname = client['nickname']
+            public_key = client['public_key']
+            self.connected_clients[nickname] = public_key
+
+    def display_connected_clients(self):
+        if not self.connected_clients:
+            print("Aucun client connecté.")
+            return
+
+        print("Clients connectés :")
+        for nickname, public_key in self.connected_clients.items():
+            print(f"- {nickname} : Public Key = {public_key}")
 
     def joinGroup(self, groupName):
         request = {
@@ -205,41 +241,22 @@ class ClientNetwork:
 
                 if group == self.actual_group:
                     self.display_callback(content)
+            
+            case ServerAction.broadcastNewConnection:
+                nickname, public_key = message[EntryForFormatedMessage.newConnectedClient]
+                self.connected_clients[nickname] = public_key
+                self.display_connected_clients()
 
             case ServerAction.error:
                 self.handle_error(message)
             
             case ServerAction.acceptConnection:
-                #get confirmed nickName
-                new_name = message[EntryForFormatedMessage.nickname]
-                self.nickname = new_name
-                self.ui.nickname = new_name
-
-                #get groups
-                groups = message[EntryForFormatedMessage.groupsList]
-                groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {}
-
-                #switch interface
-                self.ui.show_frame(LandingPage)
+               self.handle_connection_or_reconnection(message)
 
             #TODO: Fait les mêmes choses que la connection classic
             # car on ne traite pas encore les message en attentes
             case ServerAction.acceptReconnection:
-                #get confirmed nickName
-                new_name = message[EntryForFormatedMessage.nickname]
-                self.nickname = new_name
-                self.ui.nickname = new_name
-
-                #get groups
-                groups = message[EntryForFormatedMessage.groupsList]
-                groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {}
-
-                #switch interface
-                self.ui.show_frame(LandingPage)
+                self.handle_connection_or_reconnection(message)
 
             case ServerAction.giveTempNickname:
                 tempNickname = message[EntryForFormatedMessage.nickname]
