@@ -19,6 +19,7 @@ class ClientNetwork:
         self.rsa_keypair = None
         self.ui = ui
         self.socket: socket.socket = None
+        self.connected_clients: dict = {}
         self.groups: dict = {}
         self.actual_group: str = None
         self.receive_thread: threading.Thread = None  
@@ -94,6 +95,12 @@ class ClientNetwork:
         # Basculer l'interface vers la page d'accueil
         self.ui.show_frame(LandingPage)
 
+        # Mettre à jour les clients connectés
+        clients = message[EntryForFormatedMessage.connectedClients]
+        
+        self.update_connected_clients(clients)
+        self.display_connected_clients()
+
     def disconnect(self):
         self.listen_messages = False
         if self.socket:
@@ -118,6 +125,21 @@ class ClientNetwork:
         }
         self.send_message(request)
 
+    def update_connected_clients(self, clients: list[dict]):
+        # ajouter ou mettre à jour un client dans la liste des clients connectés
+        for client in clients:
+            nickname = client['nickname']
+            public_key = client['public_key']
+            self.connected_clients[nickname] = public_key
+
+    def display_connected_clients(self):
+        if not self.connected_clients:
+            print("Aucun client connecté.")
+            return
+
+        print("Clients connectés :")
+        for nickname, public_key in self.connected_clients.items():
+            print(f"- {nickname} : Public Key = {public_key}")
 
     def joinGroup(self, groupName):
         request = {
@@ -219,6 +241,11 @@ class ClientNetwork:
 
                 if group == self.actual_group:
                     self.display_callback(content)
+            
+            case ServerAction.broadcastNewConnection:
+                nickname, public_key = message[EntryForFormatedMessage.newConnectedClient]
+                self.connected_clients[nickname] = public_key
+                self.display_connected_clients()
 
             case ServerAction.error:
                 self.handle_error(message)
