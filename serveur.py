@@ -82,7 +82,15 @@ class server_socket ():
                 continue
 
             self.send_message(client.socket, entries, sender, target)
-
+    
+    def broadcast_connection(self, connection_client: Client):
+        for client in self.clients:
+            if connection_client.socket is client.socket:
+                continue
+            self.send_message(client.socket, {
+                EntryForFormatedMessage.action: ServerAction.broadcastNewConnection,
+                EntryForFormatedMessage.newConnectedClient: (connection_client.nickname, connection_client.public_key)
+            }, target=client.nickname)
 
     # Recevoir les messages de clients connectés
     def handle(self, client: Client):
@@ -95,8 +103,13 @@ class server_socket ():
                     self.handle_action_from_client(msg)
                 else:
                     content = msg[EntryForFormatedMessage.content]
+                    signature = msg[EntryForFormatedMessage.signature]
                     sender = msg[EntryForFormatedMessage.sender]
-                    self.broadcast({EntryForFormatedMessage.content: content}, sender, target)
+
+                    self.broadcast({
+                        EntryForFormatedMessage.content: content,
+                        EntryForFormatedMessage.signature: signature
+                    }, sender, target)
 
             except:
                 client.connected = False
@@ -135,57 +148,61 @@ class server_socket ():
 
         match action:
             case ClientAction.requestConnection:
-                sender = message[EntryForFormatedMessage.sender]
-                public_key = message[EntryForFormatedMessage.publicKey]
-                nickname = message[EntryForFormatedMessage.nickname]
+                sender            = message[EntryForFormatedMessage.sender]
+                public_key        = message[EntryForFormatedMessage.publicKey]
+                nickname          = message[EntryForFormatedMessage.nickname]
+
                 client_connecting = Client.get_client(sender, self.clients)
 
-                #search for client with the same nickname
-                firstConnection = True
-                for client in self.clients:
-                    if nickname == client.nickname:
-                        firstConnection = False
-                
-                #valideConnection
-                if firstConnection:
+                # vérifier si le pseudo est déjà utilisé
+                existing_account = Client.get_client(nickname, self.clients)
+                first_connection = existing_account is None
+
+                if first_connection:
+                    # mise à jour des données pour une nouvelle connexion
                     client_connecting.update_data(nickname, public_key)
 
-                    #confirme connection, and share groups list
-                    acceptConnection = {
+                    # obtenir la liste des clients connectés
+                    connected_clients_info = self.get_connected_clients_info()
+        
+                     # envoi d'une confirmation de connexion avec la liste des groupes
+                    self.send_message(client_connecting.socket, {
                         EntryForFormatedMessage.action: ServerAction.acceptConnection,
                         EntryForFormatedMessage.nickname: nickname,
-                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
-                    }
-                    self.send_message(client_connecting.socket, acceptConnection)
-                    self.show_clients()
-                
-                #valide reconnection
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}",
+                        EntryForFormatedMessage.connectedClients: connected_clients_info
+                    })
+                    self.broadcast_connection(client_connecting)
                 else:
-                    existing_account = Client.get_client(nickname, self.clients)
-                    #already connected
+                    # si déjà connecté, refuser la connexion
                     if existing_account.connected:
-                        refuseConnection = {
+                        self.send_message(client_connecting.socket,{
                             EntryForFormatedMessage.action: ServerAction.error,
                             EntryForFormatedMessage.errorType: ErrorType.alreadyConnected
-                        }
-                        self.send_message(client_connecting.socket, refuseConnection)
+                        })
                         return
 
-                    # update the existing account with the temporary data of the joining client
+                    # retirer le client temporaire
                     rejoining_client = Client.get_client(sender, self.clients)
+                    self.clients.remove(rejoining_client)
+
+                    # mise à jour des informations pour une reconnexion
                     existing_account.update_data(nickname, public_key, rejoining_client.socket)
                     existing_account.connected = True
 
-                    self.clients.remove(rejoining_client)
+                    # obtenir la liste des clients connectés
+                    connected_clients_info = self.get_connected_clients_info()
 
-                    #TODO: Il faut aussi envoyer les messages en attentes
-                    acceptReconnection = {
+                    #TODO: envoyer plus tard les messages en attentes pour ce client.
+                    self.send_message(client_connecting.socket, {
                         EntryForFormatedMessage.action: ServerAction.acceptReconnection,
                         EntryForFormatedMessage.nickname: nickname,
-                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}"
-                    }
-                    self.send_message(client_connecting.socket, acceptReconnection)
-                    self.show_clients()
+                        EntryForFormatedMessage.groupsList: f"{list(self.groups.keys())}",
+                        EntryForFormatedMessage.connectedClients: connected_clients_info
+                    })
+                    self.broadcast_connection(existing_account)
+
+                self.show_clients()
 
             case ClientAction.requestJoinGroup:
                 group_name = message[EntryForFormatedMessage.groupName]
@@ -272,6 +289,12 @@ class server_socket ():
     def send_message(self, client: socket.socket, entries: dict, sender = "server", target = ""):
         common_lib.send_message(client, sender, target, entries)
 
+    def get_connected_clients_info(self) -> list[dict]:
+        # retourne une liste où chaque entrée contient le nickname et la clé publique d'un client connecté
+        return [
+            {"nickname": client.nickname, "public_key": client.public_key}
+            for client in self.clients if client.connected
+        ]
 
     def add_group(self, group_name: str, creator_name: str):
         client = Client.get_client(creator_name, self.clients)

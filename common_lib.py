@@ -8,6 +8,7 @@ class ServerAction:
     error = "error"
     acceptConnection = "acceptConnection"
     acceptReconnection = "acceptReconnection"
+    broadcastNewConnection = "broadcastNewConnection"
     info = "info"               #give data supposed to be shown in the chat
     giveTempNickname = "giveTempNickname"
     joinGroup = "joinGroup"     #allow the client to join a group
@@ -33,15 +34,18 @@ class ClientAction:
 class EntryForFormatedMessage:
     sender = 'sender'
     target = 'target'
+    connectedClients = 'connectedClients'
     content = 'content'        #basic content, usually message between clients
     action = 'action'          #type of a request or an action
     errorType = 'errorType'
+    newConnectedClient = 'newConnectedClient'
     nickname = 'nickname'
     publicKey = 'publicKey'
     keyRequester = 'keyRequester' # identité d'un participant qui souhaite rejoindre un groupe
     groupsList = 'groupsList'  #a list a group
     groupName = 'groupName'    #name of a specific group
     groupKey = 'groupKey'    # clé de chiffrement de groupe
+    signature = 'signature'
 
 
 class ErrorType:

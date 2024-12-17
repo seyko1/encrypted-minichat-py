@@ -19,6 +19,7 @@ class ClientNetwork:
         self.rsa_keypair = None
         self.ui = ui
         self.socket: socket.socket = None
+        self.connected_clients: dict = {}
         self.groups: dict = {}
         self.actual_group: str = None
         self.receive_thread: threading.Thread = None  
@@ -79,6 +80,26 @@ class ClientNetwork:
         }
         self.send_message(requestConnection)
 
+    def handle_connection_or_reconnection(self, message: dict):
+        # Récupérer et confirmer le pseudo
+        nickname = message[EntryForFormatedMessage.nickname]
+        self.nickname = nickname
+        self.ui.nickname = nickname
+
+        # Récupérer les groupes
+        groups = message[EntryForFormatedMessage.groupsList]
+        groups = ast.literal_eval(groups)
+        for group in groups:
+            self.groups[group] = {}
+
+        # Basculer l'interface vers la page d'accueil
+        self.ui.show_frame(LandingPage)
+
+        # Mettre à jour les clients connectés
+        clients = message[EntryForFormatedMessage.connectedClients]
+        
+        self.update_connected_clients(clients)
+        self.display_connected_clients()
 
     def disconnect(self):
         self.listen_messages = False
@@ -104,6 +125,25 @@ class ClientNetwork:
         }
         self.send_message(request)
 
+    def update_connected_clients(self, clients: list[dict]):
+        # ajouter ou mettre à jour un client dans la liste des clients connectés
+        for client in clients:
+            nickname = client['nickname']
+            public_key = client['public_key']
+            self.connected_clients[nickname] = public_key
+
+    def display_connected_clients(self):
+        if not self.connected_clients:
+            print("Aucun client connecté.")
+            return
+
+        print("Clients connectés :")
+        for nickname, public_key in self.connected_clients.items():
+            print(f"- {nickname} : Public Key = {public_key}")
+            
+    def get_public_key_by_nickname(self, nickname: str) -> tuple[str, str]:
+        if nickname in self.connected_clients:
+            return tuple(self.connected_clients[nickname])
 
     def joinGroup(self, groupName):
         request = {
@@ -142,21 +182,44 @@ class ClientNetwork:
             print(f"Clé du groupe {groupName} introuvable.")
         return group_box
 
-    def encrypt_msg(self, msg: str, group_name: str):
+    def encrypt_msg(self, msg: str, group_name: str) -> bytes:
         group_box = self.get_group_box(group_name)
         return secret_box.encrypt(group_box, msg)
         
-    def decrypt_msg(self, msg: str, group_name: str):
+    def decrypt_msg(self, msg: str, group_name: str) -> str:
         group_box = self.get_group_box(group_name)
         return secret_box.decrypt(group_box, msg)
          
     def send_message(self, entries: dict = {}, target = "server"): 
         if target != "server" and self.actual_group:
+            # chiffré
             enc_msg = self.encrypt_msg(entries['content'], self.actual_group)
-            entries['content'] = enc_msg
+            entries['content'] = enc_msg.decode() 
+            # signature
+            sign = self.sign_message(enc_msg)
+            entries['signature'] = sign.decode() 
         
         common_lib.send_message(self.socket, self.nickname, target, entries)
     
+    def sign_message(self, cipher: bytes):
+        hash = rsa.hash_sha256(cipher)
+        secret_key = self.rsa_keypair[1]
+        return rsa.rsa_sign(hash, secret_key[0], secret_key[1])
+
+    def is_valid_sign(self, message: dict):
+        cipher    = message[EntryForFormatedMessage.content]
+        signature = message[EntryForFormatedMessage.signature]
+
+        # récupérer la clé publique de l'expéditeur
+        sender = message[EntryForFormatedMessage.sender]
+        pk = self.get_public_key_by_nickname(sender)
+        int_pk = rsa.hex_rsa_key_to_int(pk)
+
+        hash = rsa.hash_sha256(cipher.encode())
+
+        decipher_sign = rsa.rsa_verify(signature.encode(), int_pk[0], int_pk[1])
+
+        return decipher_sign == hash  
 
     def receive_messages(self):
         while self.listen_messages:
@@ -172,6 +235,12 @@ class ClientNetwork:
                 content = message[EntryForFormatedMessage.content]
 
                 if target == self.actual_group:
+                    if not self.is_valid_sign(message):
+                        print("Signature invalide")
+                        return
+                    else:
+                        print("Signature vérifiée")
+
                     dec_msg = self.decrypt_msg(content, self.actual_group)
                     reformated_message = {
                         'sender': sender,
@@ -205,41 +274,22 @@ class ClientNetwork:
 
                 if group == self.actual_group:
                     self.display_callback(content)
+            
+            case ServerAction.broadcastNewConnection:
+                nickname, public_key = message[EntryForFormatedMessage.newConnectedClient]
+                self.connected_clients[nickname] = public_key
+                self.display_connected_clients()
 
             case ServerAction.error:
                 self.handle_error(message)
             
             case ServerAction.acceptConnection:
-                #get confirmed nickName
-                new_name = message[EntryForFormatedMessage.nickname]
-                self.nickname = new_name
-                self.ui.nickname = new_name
-
-                #get groups
-                groups = message[EntryForFormatedMessage.groupsList]
-                groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {}
-
-                #switch interface
-                self.ui.show_frame(LandingPage)
+               self.handle_connection_or_reconnection(message)
 
             #TODO: Fait les mêmes choses que la connection classic
             # car on ne traite pas encore les message en attentes
             case ServerAction.acceptReconnection:
-                #get confirmed nickName
-                new_name = message[EntryForFormatedMessage.nickname]
-                self.nickname = new_name
-                self.ui.nickname = new_name
-
-                #get groups
-                groups = message[EntryForFormatedMessage.groupsList]
-                groups = ast.literal_eval(groups)
-                for group in groups:
-                    self.groups[group] = {}
-
-                #switch interface
-                self.ui.show_frame(LandingPage)
+                self.handle_connection_or_reconnection(message)
 
             case ServerAction.giveTempNickname:
                 tempNickname = message[EntryForFormatedMessage.nickname]
